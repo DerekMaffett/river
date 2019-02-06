@@ -1,0 +1,72 @@
+name: river
+version: 0.1.0.0
+github: "DerekMaffett/river"
+license: MIT
+author: "Derek Maffett"
+maintainer: "derekgmaffett@gmail.com"
+copyright: "2018 Derek Maffett"
+
+extra-source-files:
+    - README.md
+    - ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description: Please see the README on GitHub at <https://github.com/githubuser/river#readme>
+
+dependencies:
+    - base >= 4.7 && < 5
+    - split
+    - req
+    - directory
+    - aeson
+    - text
+    - data-default-class
+    - bytestring
+    - process
+    - optparse-applicative
+    - hslogger
+    - mtl
+    - safe
+    - parsec
+
+library:
+    source-dirs:
+        - src
+
+default-extensions:
+    - OverloadedStrings
+    - NamedFieldPuns
+    - DuplicateRecordFields
+    - DeriveGeneric
+    - DeriveAnyClass
+
+executables:
+    river:
+        main: Main.hs
+        source-dirs: app
+        ghc-options:
+            - -threaded
+            - -rtsopts
+            - -with-rtsopts=-N
+            - -Wall
+        dependencies:
+            - river
+
+tests:
+    river-test:
+        main: Spec.hs
+        source-dirs: test
+        ghc-options:
+            - -threaded
+            - -rtsopts
+            - -with-rtsopts=-N
+        dependencies:
+            - river
+            - hspec
+            - QuickCheck
