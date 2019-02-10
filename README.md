@@ -6,6 +6,15 @@ Ideally this can help developers to converge on similar processes across differe
 groups, keep decided processes consistent, and generate statistics useful to improving
 development practices.
 
+## Development Roadmap
+
+For pragmatic reasons, development requires real-life applications in order to meaningfully make progress. Current
+support favors a Git/Bitbucket/Jira workflow, but Github and alternative ticket management tools should be supported
+ultimately. Configuration options are expected to increase over time to support these different options, and possibly
+allow different tools to be managed as custom plugins. [Trunk based development][tbd] will be the initial workflow supported,
+with Git Flow being the most likely next workflow to be added. However, existing use cases will tend to be preferred over
+abstract ones. 
+
 ## How to Install
 
 1. Add a `.river.env.json` file to the root of your project with the necessary personal
@@ -74,3 +83,5 @@ Quick-fix examples:
 
 `river pr` takes your current branch, starts a PR, and sets your Jira ticket to Code review,
 pinging all default reviewers.
+
+[tbd]: https://trunkbaseddevelopment.com/
