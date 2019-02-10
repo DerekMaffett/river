@@ -68,7 +68,7 @@ Basic example: `river begin -k DSP-3723`
 Quick-fix examples:
 `river begin --quick-fix "quick task, this makes a ticket!"
 
-`river begin --qb "quick bux fix, makes a ticket!"
+`river begin --qb "quick bux fix, makes a ticket!"`
 
 ### river pr
 
