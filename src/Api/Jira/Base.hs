@@ -16,7 +16,7 @@ getBaseUrl = do
     return $ _getBaseUrl jiraDomain
 
 _getBaseUrl jiraDomain =
-    https (T.pack jiraDomain <> ".atlassian.com") /: "rest" /: "api" /: "latest"
+    https (T.pack jiraDomain <> ".atlassian.net") /: "rest" /: "api" /: "latest"
 
 generateAuthOptions = do
     Config { jiraEmail, jiraToken } <- ask
