@@ -145,8 +145,8 @@ configFromOptions :: Options -> IO Config.Config
 configFromOptions options = do
     configExists <- Dir.doesFileExist ".river.json"
     envExists    <- Dir.doesFileExist ".river.env.json"
-    unless configExists $ die "river.json file does not exist!"
-    unless envExists $ die "river.env.json file does not exist!"
+    unless configExists $ die ".river.json file does not exist!"
+    unless envExists $ die ".river.env.json file does not exist!"
     riverConfigResult <- A.eitherDecodeFileStrict' ".river.json"
     envResult         <- A.eitherDecodeFileStrict' ".river.env.json"
     logger            <- initializeLogger options
