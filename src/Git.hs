@@ -17,6 +17,7 @@ import           Text.Parsec
 setOrigin :: Program ()
 setOrigin = do
     Config { repoOrg, repoName } <- ask
+    runProcess' $ "git remote remove river-origin"
     runProcess'
         $  "git remote add river-origin git@bitbucket.org:"
         <> repoOrg
