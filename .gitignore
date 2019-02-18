@@ -1,4 +1,6 @@
 .stack-work/
 river.cabal
+.river.env.json
+.river.json
 *~
 .env
