@@ -4,6 +4,7 @@ import qualified Begin
 import qualified Review
 import qualified Config
 import qualified Types
+import qualified Git
 import           Control.Monad
 import qualified Control.Monad.Reader          as Reader
 import           Options.Applicative
@@ -103,6 +104,7 @@ main = do
 
 runProgram :: Options -> Config.Program ()
 runProgram options = do
+    Git.setOrigin
     case options of
         Begin (BeginOptions { issueSource }) -> Begin.begin issueSource
         Review _ -> Review.review
@@ -135,6 +137,7 @@ data EnvConfig = EnvConfig
 data RiverConfig = RiverConfig
   { workingBranch :: String
   , repoName :: String
+  , repoOrg :: String
   , defaultReviewers :: [Types.BitbucketUser]
   , projectKey :: String
   , jiraDomain :: String
@@ -172,6 +175,7 @@ configFromOptions options = do
                         Just bitbucketUser -> return Config.Config
                             { logger            = logger
                             , repoName          = repoName riverConfig
+                            , repoOrg           = repoOrg riverConfig
                             , projectKey        = projectKey riverConfig
                             , defaultReviewers  = defaultReviewers riverConfig
                             , jiraDomain        = jiraDomain riverConfig

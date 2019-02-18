@@ -18,6 +18,7 @@ ask = Reader.ask
 data Config = Config
   { logger :: String
   , repoName :: String
+  , repoOrg :: String
   , projectKey :: String
   , defaultReviewers :: [Types.BitbucketUser]
   , workingBranch :: String
