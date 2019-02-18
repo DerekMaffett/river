@@ -1,5 +1,6 @@
 module Git
     ( openBranch
+    , setOrigin
     , getCurrentBranch
     , getIssueKeyFromBranch
     )
@@ -12,6 +13,17 @@ import           Data.Char
 import           Data.List
 import           Text.Parsec
 
+
+setOrigin :: Program ()
+setOrigin = do
+    Config { repoOrg, repoName } <- ask
+    runProcess'
+        $  "git remote add river-origin git@bitbucket.org:"
+        <> repoOrg
+        <> "/"
+        <> repoName
+        <> ".git"
+
 openBranch :: String -> Program ()
 openBranch branchName = do
     Config { workingBranch } <- ask
@@ -22,7 +34,7 @@ openBranch branchName = do
     L.logNotice "Creating branch..."
     runProcess' $ "git checkout -b " <> branchName
     L.logNotice "Pushing branch to remote..."
-    runProcess' $ "git push -u origin " <> branchName
+    runProcess' $ "git push -u river-origin " <> branchName
 
 getCurrentBranch :: Program String
 getCurrentBranch = trim <$> runProcess "git rev-parse --abbrev-ref HEAD"

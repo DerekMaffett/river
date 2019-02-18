@@ -29,16 +29,15 @@ _generateAuthOptions username password =
 
 createPullRequest :: Types.Issue -> String -> Program String
 createPullRequest issue branchName = do
-    Config { repoName } <- ask
-    authOptions         <- generateAuthOptions
-    body                <- getBody
+    Config { repoName, repoOrg } <- ask
+    authOptions                  <- generateAuthOptions
+    body                         <- getBody
     runReq def $ do
         response <- req
             POST
             (  baseUrl
             /: "repositories"
-            -- TODO: Add org/user to config since this can't be assumed anymore
-            /: undefined
+            /: (T.pack repoOrg)
             /: (T.pack repoName)
             /: "pullrequests"
             )
