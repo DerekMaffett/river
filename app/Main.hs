@@ -137,6 +137,7 @@ data RiverConfig = RiverConfig
   , repoName :: String
   , defaultReviewers :: [Types.BitbucketUser]
   , projectKey :: String
+  , jiraDomain :: String
   } deriving (Generic, A.ToJSON, A.FromJSON)
 
 
@@ -155,7 +156,8 @@ configFromOptions options = do
             Left riverError ->
                 die $ "river.json parsing error:\n" <> riverError
             Right riverConfig -> do
-                maybeJiraUser <- Jira.getMyself (jiraEmail envConfig)
+                maybeJiraUser <- Jira.getMyself (jiraDomain riverConfig)
+                                                (jiraEmail envConfig)
                                                 (jiraToken envConfig)
                 maybeBitbucketUser <- Bitbucket.getMyself
                     (bitbucketUsername envConfig)
@@ -172,6 +174,7 @@ configFromOptions options = do
                             , repoName          = repoName riverConfig
                             , projectKey        = projectKey riverConfig
                             , defaultReviewers  = defaultReviewers riverConfig
+                            , jiraDomain        = jiraDomain riverConfig
                             , bitbucketUser     = bitbucketUser
                             , bitbucketUsername = bitbucketUsername envConfig
                             , bitbucketPassword = bitbucketPassword envConfig

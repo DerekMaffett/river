@@ -41,6 +41,7 @@ instance Show TransitionState where
 
 transitionIssue :: TransitionState -> Types.Issue -> Program ()
 transitionIssue transitionState issue = do
+    url         <- getUrl
     authOptions <- generateAuthOptions
     case maybeTransition of
         Nothing ->
@@ -53,8 +54,15 @@ transitionIssue transitionState issue = do
                 (authOptions <> urlOptions)
             return ()
   where
-    url = baseUrl /: "issue" /: (pack . Types.key $ issue) /: "transitions"
-    urlOptions = "expand" =: ("transitions" :: Text)
+    getUrl = do
+        baseUrl <- getBaseUrl
+        return
+            $  baseUrl
+            /: "issue"
+            /: (pack . Types.key $ issue)
+            /: "transitions"
+
+    urlOptions      = "expand" =: ("transitions" :: Text)
     maybeTransition = find
         ((== transitionState) . convertToTransitionState . Types.name)
         (Types.transitions issue)

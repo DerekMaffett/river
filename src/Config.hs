@@ -20,11 +20,12 @@ data Config = Config
   , repoName :: String
   , projectKey :: String
   , defaultReviewers :: [Types.BitbucketUser]
+  , workingBranch :: String
+  , jiraDomain :: String
   , bitbucketUser :: Types.BitbucketUser
   , jiraUser :: Types.JiraUser
   , bitbucketUsername :: String
   , bitbucketPassword :: String
   , jiraEmail :: String
   , jiraToken :: String
-  , workingBranch :: String
   } deriving (Show)

@@ -16,6 +16,7 @@ import qualified Types
 assignIssue :: String -> Program ()
 assignIssue issueKey = do
     Config { jiraUser } <- ask
+    url                 <- getUrl
     authOptions         <- generateAuthOptions
     runReq def $ do
         req PUT
@@ -25,6 +26,8 @@ assignIssue issueKey = do
             authOptions
         return ()
   where
-    url = baseUrl /: "issue" /: (pack issueKey)
+    getUrl = do
+        baseUrl <- getBaseUrl
+        return $ baseUrl /: "issue" /: (pack issueKey)
     requestBody jiraUser =
         object [("fields" .= object [("assignee" .= jiraUser)])]

@@ -14,11 +14,10 @@ import           Network.HTTP.Req
 import           Config
 import qualified Types
 
-getMyself jiraEmail jiraToken = runReq def $ do
+getMyself jiraDomain jiraEmail jiraToken = runReq def $ do
     response <- req GET
-                    url
+                    (_getBaseUrl jiraDomain /: "myself")
                     NoReqBody
                     jsonResponse
                     (_generateAuthOptions jiraEmail jiraToken)
     return (responseBody response :: Maybe Types.JiraUser)
-    where url = baseUrl /: "myself"

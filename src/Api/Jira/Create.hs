@@ -23,6 +23,7 @@ data Response = Response
 createIssue :: String -> Types.IssueTypeInternal -> Program String
 createIssue summary issueType = do
     Config { projectKey } <- ask
+    url                   <- getUrl
     authOptions           <- generateAuthOptions
     runReq def $ do
         response <- req POST
@@ -32,7 +33,9 @@ createIssue summary issueType = do
                         authOptions
         return $ (key :: Response -> String) . responseBody $ response
   where
-    url = baseUrl /: "issue"
+    getUrl = do
+        baseUrl <- getBaseUrl
+        return $ baseUrl /: "issue"
     request projectKey summary issueType = object
         [ "fields"
               .= (object
