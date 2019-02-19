@@ -34,7 +34,7 @@ data TransitionState
 instance Show TransitionState where
   show Todo = "To Do"
   show InProgress = "In Progress"
-  show CodeReview = "Code review"
+  show CodeReview = "Code Review"
   show InTest = "Awaiting approval"
   show Done = "Done"
   show _ = "Unknown Transition State"
@@ -43,6 +43,7 @@ transitionIssue :: TransitionState -> Types.Issue -> Program ()
 transitionIssue transitionState issue = do
     url         <- getUrl
     authOptions <- generateAuthOptions
+    logDebug $ "Issue: " <> show issue
     case maybeTransition of
         Nothing ->
             logError $ "Unable to transition to " <> show transitionState
@@ -69,7 +70,7 @@ transitionIssue transitionState issue = do
     convertToTransitionState transitionName = case transitionName of
         "To Do"             -> Todo
         "In Progress"       -> InProgress
-        "Code review"       -> CodeReview
+        "Code Review"       -> CodeReview
         "Awaiting approval" -> InTest
         "Done"              -> Done
         _                   -> Unknown
