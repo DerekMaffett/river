@@ -1,6 +1,6 @@
 module Api.Jira.Transitions
     ( transitionIssue
-    , TransitionState(..)
+    , Transition(..)
     )
 where
 
@@ -23,30 +23,23 @@ newtype Body = Body
   { transition :: Types.Transition
   } deriving (Show, Generic, FromJSON, ToJSON)
 
-data TransitionState
-    = InProgress
-    | CodeReview
-    | Todo
-    | Done
-    | InTest
+data Transition
+    = ToInProgress
+    | ToCodeReview
     | Unknown deriving (Eq)
 
-instance Show TransitionState where
-  show Todo = "To Do"
-  show InProgress = "In Progress"
-  show CodeReview = "Code Review"
-  show InTest = "Awaiting approval"
-  show Done = "Done"
+instance Show Transition where
+  show ToInProgress = "In Progress"
+  show ToCodeReview = "Code Review"
   show _ = "Unknown Transition State"
 
-transitionIssue :: TransitionState -> Types.Issue -> Program ()
-transitionIssue transitionState issue = do
+transitionIssue :: Transition -> Types.Issue -> Program ()
+transitionIssue transition issue = do
     url         <- getUrl
     authOptions <- generateAuthOptions
     logDebug $ "Issue: " <> show issue
     case maybeTransition of
-        Nothing ->
-            logError $ "Unable to transition to " <> show transitionState
+        Nothing -> logError $ "Unable to transition to " <> show transition
         Just transition -> runReq def $ do
             req POST
                 url
@@ -65,12 +58,9 @@ transitionIssue transitionState issue = do
 
     urlOptions      = "expand" =: ("transitions" :: Text)
     maybeTransition = find
-        ((== transitionState) . convertToTransitionState . Types.name)
+        ((== transition) . convertToTransitionState . Types.name)
         (Types.transitions issue)
     convertToTransitionState transitionName = case transitionName of
-        "To Do"             -> Todo
-        "In Progress"       -> InProgress
-        "Code Review"       -> CodeReview
-        "Awaiting approval" -> InTest
-        "Done"              -> Done
-        _                   -> Unknown
+        "River-To-In-Progress" -> ToInProgress
+        "River-To-Code-Review" -> ToCodeReview
+        _                      -> Unknown

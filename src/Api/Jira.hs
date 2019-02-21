@@ -14,5 +14,5 @@ import           Api.Jira.Transitions
 import           Api.Jira.Assign
 import           Api.Jira.Myself
 
-toInProgress = transitionIssue InProgress
-toCodeReview = transitionIssue CodeReview
+toInProgress = transitionIssue ToInProgress
+toCodeReview = transitionIssue ToCodeReview
