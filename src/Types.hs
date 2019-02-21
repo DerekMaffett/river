@@ -33,12 +33,12 @@ instance FromJSON Issue where
     transitions <- o .: "transitions"
     fields <- o .: "fields"
     summary <- fields .: "summary"
-    issueTypeO <- fields .: "issuetype"
-    issueTypeName <- issueTypeO .: "name"
-    let issueType = convertIssueType (issueTypeName :: String)
+    issueType <- convertIssueType <$> (fields .: "issuetype" >>= (.: "name"))
     description <- fields .: "description"
     return $ Issue key transitions summary issueType description
-    where convertIssueType issueTypeString = if (issueTypeString `elem` ["Bug", "Bug Sub-task"]) then Bug else Task
+    where
+      convertIssueType :: String -> IssueType
+      convertIssueType issueTypeString = if (issueTypeString `elem` ["Bug", "Bug Sub-task"]) then Bug else Task
 
 
 data Transition = Transition
