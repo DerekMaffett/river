@@ -11,16 +11,16 @@ import           Data.Text
 import           GHC.Generics
 import           Network.HTTP.Req
 import           Config
-import qualified Types                          ( IssueTypeInternal(..)
+import qualified Types                          ( IssueType(..)
                                                 , Issue(..)
                                                 )
 
 
 data Response = Response
   { key :: String
-  } deriving (Show, Generic, ToJSON, FromJSON)
+  } deriving (Show, Generic, FromJSON)
 
-createIssue :: String -> Types.IssueTypeInternal -> Program String
+createIssue :: String -> Types.IssueType -> Program String
 createIssue summary issueType = do
     Config { projectKey } <- ask
     url                   <- getUrl
@@ -28,20 +28,24 @@ createIssue summary issueType = do
     runReq def $ do
         response <- req POST
                         url
-                        (ReqBodyJson $ request projectKey summary issueType)
+                        (ReqBodyJson $ request projectKey)
                         jsonResponse
                         authOptions
-        return $ (key :: Response -> String) . responseBody $ response
+        return $ key . responseBody $ response
   where
     getUrl = do
         baseUrl <- getBaseUrl
         return $ baseUrl /: "issue"
-    request projectKey summary issueType = object
+    request projectKey = object
         [ "fields"
               .= (object
                      [ "summary" .= summary
                      , "project" .= (object ["key" .= projectKey])
-                     , "issuetype" .= (object ["name" .= show issueType])
+                     , "issuetype"
+                         .= (object ["name" .= (jiraIssueType :: String)])
                      ]
                  )
         ]
+    jiraIssueType = case issueType of
+        Types.Bug  -> "Bug"
+        Types.Task -> "Task"

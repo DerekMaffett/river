@@ -63,8 +63,8 @@ createPullRequest issue branchName = do
               )
             ]
 
-    description = case Types.description . Types.fields $ issue of
-        Nothing   -> Types.summary . Types.fields $ issue
+    description = case Types.description issue of
+        Nothing   -> Types.summary issue
         Just desc -> desc
 
 

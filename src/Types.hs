@@ -1,8 +1,6 @@
 module Types
     ( Issue(..)
-    , Fields(..)
     , IssueType(..)
-    , IssueTypeInternal(..)
     , Transition(..)
     , JiraUser(..)
     , BitbucketUser(..)
@@ -13,31 +11,35 @@ import           Data.Aeson
 import           Data.List.Split
 import           GHC.Generics
 
+data IssueType
+  = Bug
+  | Task
+
+instance Show IssueType where
+  show Bug = "bug"
+  show Task = "feature"
+
 data Issue = Issue
   { key :: String
   , transitions :: [Transition]
-  , fields :: Fields
-  } deriving (Show, Generic, FromJSON)
-
--- Fields is a recurring data type, but fields are optional. Not sure
--- how to best deal with this yet.
-data Fields = Fields
-  { summary :: String
-  , issuetype :: IssueType
+  , summary :: String
+  , issueType :: IssueType
   , description :: Maybe String
-  } deriving (Show, Generic, FromJSON)
-
-data IssueType = IssueType
-  { issueTypeName :: String
   } deriving (Show)
 
-instance FromJSON IssueType where
-  parseJSON (Object x) = IssueType <$> x .: "name"
-  parseJSON _ = fail "Expected an Object"
+instance FromJSON Issue where
+  parseJSON = withObject "object" $ \o -> do
+    key <- o .: "key"
+    transitions <- o .: "transitions"
+    fields <- o .: "fields"
+    summary <- fields .: "summary"
+    issueTypeO <- fields .: "issuetype"
+    issueTypeName <- issueTypeO .: "name"
+    let issueType = convertIssueType (issueTypeName :: String)
+    description <- fields .: "description"
+    return $ Issue key transitions summary issueType description
+    where convertIssueType issueTypeString = if (issueTypeString `elem` ["Bug", "Bug Sub-task"]) then Bug else Task
 
-data IssueTypeInternal
-  = Bug
-  | Task deriving (Show)
 
 data Transition = Transition
   { id :: String

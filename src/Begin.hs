@@ -12,7 +12,7 @@ import qualified Logger                        as L
 
 data IssueSource
   = Key String
-  | QuickFix String Types.IssueTypeInternal deriving (Show)
+  | QuickFix String Types.IssueType deriving (Show)
 
 
 begin :: IssueSource -> Program ()
@@ -46,18 +46,9 @@ getBranchName :: Types.Issue -> Program String
 getBranchName issue = do
     input <- L.query $ "Input branch name: " <> baseBranchName
     return $ baseBranchName <> input
-    where baseBranchName = getIssueType issue <> "/" <> Types.key issue <> "-"
-
-getIssueType :: Types.Issue -> String
-getIssueType issue = if isBug then "bug" else "feature"
   where
-    isBug =
-        (`elem` ["Bug", "Bug Sub-task"])
-            . Types.issueTypeName
-            . Types.issuetype
-            . Types.fields
-            $ issue
+    baseBranchName =
+        (show . Types.issueType) issue <> "/" <> Types.key issue <> "-"
 
 getIssueSummary :: Types.Issue -> String
-getIssueSummary issue =
-    (Types.key issue) <> " - " <> (Types.summary . Types.fields $ issue)
+getIssueSummary issue = Types.key issue <> " - " <> Types.summary issue

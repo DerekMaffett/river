@@ -20,6 +20,7 @@ review = do
             case maybeIssue of
                 Nothing    -> L.logError "No such Jira issue could be found"
                 Just issue -> do
+                    -- when
                     L.logNotice "Creating pull request..."
                     link <- Bitbucket.createPullRequest issue branchName
                     L.logNotice "Setting JIRA issue to Code Review..."
