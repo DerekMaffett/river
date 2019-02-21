@@ -141,6 +141,7 @@ data RiverConfig = RiverConfig
   , defaultReviewers :: [Types.BitbucketUser]
   , projectKey :: String
   , jiraDomain :: String
+  , bugCategories :: [String]
   } deriving (Generic, A.ToJSON, A.FromJSON)
 
 
@@ -179,6 +180,7 @@ configFromOptions options = do
                             , projectKey        = projectKey riverConfig
                             , defaultReviewers  = defaultReviewers riverConfig
                             , jiraDomain        = jiraDomain riverConfig
+                            , bugCategories     = bugCategories riverConfig
                             , bitbucketUser     = bitbucketUser
                             , bitbucketUsername = bitbucketUsername envConfig
                             , bitbucketPassword = bitbucketPassword envConfig

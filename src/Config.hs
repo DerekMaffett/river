@@ -23,6 +23,7 @@ data Config = Config
   , defaultReviewers :: [Types.BitbucketUser]
   , workingBranch :: String
   , jiraDomain :: String
+  , bugCategories :: [String]
   , bitbucketUser :: Types.BitbucketUser
   , jiraUser :: Types.JiraUser
   , bitbucketUsername :: String
