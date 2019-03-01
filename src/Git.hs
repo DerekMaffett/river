@@ -18,15 +18,15 @@ import           Control.Monad
 setOrigin :: Program ()
 setOrigin = do
     Config { repoOrg, repoName } <- ask
-    originExists                 <- includesOrigin <$> (runProcess "git remote")
-    when originExists $ runProcess' $ "git remote remove river-origin"
+    originExists                 <- includesOrigin <$> runProcess "git remote"
+    when originExists $ runProcess' "git remote remove river-origin"
     runProcess'
         $  "git remote add river-origin git@bitbucket.org:"
         <> repoOrg
         <> "/"
         <> repoName
         <> ".git"
-    where includesOrigin = any (== "river-origin") . lines
+    where includesOrigin = elem "river-origin" . lines
 
 openBranch :: String -> Program ()
 openBranch branchName = do

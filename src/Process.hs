@@ -38,10 +38,9 @@ _runProcess shellCommand std_in = do
     return (exitCode, output, error)
 
 
-exitIfFailed shellCommand commandResult = do
-    case commandResult of
-        (ExitFailure _, _, _) -> exitWithError shellCommand commandResult
-        _                     -> return commandResult
+exitIfFailed shellCommand commandResult = case commandResult of
+    (ExitFailure _, _, _) -> exitWithError shellCommand commandResult
+    _                     -> return commandResult
 
 
 exitWithError shellCommand (exitCode, output, error) = do

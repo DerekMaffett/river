@@ -38,7 +38,7 @@ instance FromJSON Issue where
     return $ Issue key transitions summary issueType description
     where
       convertIssueType :: String -> IssueType
-      convertIssueType issueTypeString = if (issueTypeString `elem` ["Bug", "Bug Sub-task"]) then Bug else Task
+      convertIssueType issueTypeString = if issueTypeString `elem` ["Bug", "Bug Sub-task"] then Bug else Task
 
 
 data Transition = Transition

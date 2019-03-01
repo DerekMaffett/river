@@ -30,6 +30,7 @@ dependencies:
     - bytestring
     - process
     - optparse-applicative
+    - unordered-containers
     - hslogger
     - mtl
     - safe
