@@ -11,16 +11,15 @@ import qualified Data.ByteString.Char8         as B
 import           Network.HTTP.Req
 import           Config
 
-getBaseUrl = do
-    Config { jiraDomain } <- ask
-    return $ _getBaseUrl jiraDomain
+getBaseUrl settings = do
+    return $ _getBaseUrl (domainName settings)
 
 _getBaseUrl jiraDomain =
     https (T.pack jiraDomain <> ".atlassian.net") /: "rest" /: "api" /: "latest"
 
-generateAuthOptions = do
-    Config { jiraEmail, jiraToken } <- ask
-    return $ _generateAuthOptions jiraEmail jiraToken
+generateAuthOptions (JiraConfig { auth }) = do
+    let (BasicAuthCredentials username password) = auth
+    return $ _generateAuthOptions username password
 
-_generateAuthOptions jiraEmail jiraToken =
-    basicAuth (B.pack jiraEmail) (B.pack jiraToken)
+_generateAuthOptions username password =
+    basicAuth (B.pack username) (B.pack password)

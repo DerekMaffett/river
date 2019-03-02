@@ -20,23 +20,22 @@ data Response = Response
   { key :: String
   } deriving (Show, Generic, FromJSON)
 
-createIssue :: String -> Types.IssueType -> Program String
-createIssue summary issueType = do
-    Config { projectKey } <- ask
-    url                   <- getUrl
-    authOptions           <- generateAuthOptions
+createIssue settings summary issueType = do
+    url         <- getUrl
+    authOptions <- generateAuthOptions settings
     runReq def $ do
         response <- req POST
                         url
-                        (ReqBodyJson $ request projectKey)
+                        (ReqBodyJson $ request)
                         jsonResponse
                         authOptions
         return $ key . responseBody $ response
   where
-    getUrl = do
-        baseUrl <- getBaseUrl
+    projectKey = Config.projectKey settings
+    getUrl     = do
+        baseUrl <- getBaseUrl settings
         return $ baseUrl /: "issue"
-    request projectKey = object
+    request = object
         [ "fields"
               .= (object
                      [ "summary" .= summary

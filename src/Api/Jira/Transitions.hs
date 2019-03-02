@@ -45,10 +45,10 @@ newtype Body = Body
   { transition :: Types.Transition
   } deriving (Show, Generic, FromJSON, ToJSON)
 
-transitionIssue :: Transition -> Types.Issue -> Program ()
-transitionIssue transition issue = do
+-- transitionIssue :: Transition -> Types.Issue -> Program ()
+transitionIssue transition settings issue = do
     url         <- getUrl
-    authOptions <- generateAuthOptions
+    authOptions <- generateAuthOptions settings
     logDebug $ "Issue: " <> show issue
     case maybeTransition of
         Nothing ->
@@ -66,7 +66,7 @@ transitionIssue transition issue = do
             return ()
   where
     getUrl = do
-        baseUrl <- getBaseUrl
+        baseUrl <- getBaseUrl settings
         return
             $  baseUrl
             /: "issue"

@@ -10,24 +10,18 @@ import           Data.Default.Class
 import           Data.Text
 import           GHC.Generics
 import           Network.HTTP.Req
-import           Config
+import           Config                         ( JiraConfig(..) )
 import qualified Types
 
-assignIssue :: String -> Program ()
-assignIssue issueKey = do
-    Config { jiraUser } <- ask
-    url                 <- getUrl
-    authOptions         <- generateAuthOptions
+-- assignIssue :: String -> Program ()
+assignIssue settings issueKey = do
+    url         <- getUrl
+    authOptions <- generateAuthOptions settings
     runReq def $ do
-        req PUT
-            url
-            (ReqBodyJson $ requestBody jiraUser)
-            ignoreResponse
-            authOptions
+        req PUT url (ReqBodyJson $ requestBody) ignoreResponse authOptions
         return ()
   where
     getUrl = do
-        baseUrl <- getBaseUrl
+        baseUrl <- getBaseUrl settings
         return $ baseUrl /: "issue" /: (pack issueKey)
-    requestBody jiraUser =
-        object [("fields" .= object [("assignee" .= jiraUser)])]
+    requestBody = object [("fields" .= object [("assignee" .= user settings)])]

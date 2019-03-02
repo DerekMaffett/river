@@ -14,9 +14,9 @@ import           Network.HTTP.Req
 import           Config
 import           Types                          ( Issue(..) )
 
-getIssue issueKey = do
+getIssue settings issueKey = do
     url         <- getUrl
-    authOptions <- generateAuthOptions
+    authOptions <- generateAuthOptions settings
     runReq def $ do
         response <- req GET
                         url
@@ -26,6 +26,6 @@ getIssue issueKey = do
         return (responseBody response :: Maybe Issue)
   where
     getUrl = do
-        baseUrl <- getBaseUrl
+        baseUrl <- getBaseUrl settings
         return $ baseUrl /: "issue" /: (pack issueKey)
     urlOptions = "expand" =: ("transitions" :: Text)

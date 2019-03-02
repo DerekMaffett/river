@@ -16,20 +16,23 @@ data IssueSource
 
 
 begin :: IssueSource -> Program ()
-begin issueSource = case issueSource of
-    Key issueKey -> do
-        L.logNotice "Searching JIRA for issue..."
-        _begin issueKey
-    QuickFix summary issueType -> do
-        L.logNotice "Creating issue..."
-        issueKey <- Jira.createIssue summary issueType
-        L.logNotice $ "Created issue: " <> issueKey
-        _begin issueKey
+begin issueSource = do
+    Config { projectManager } <- ask
+    case projectManager of
+        Jira jiraSettings -> case issueSource of
+            Key issueKey -> do
+                L.logNotice "Searching JIRA for issue..."
+                _begin jiraSettings issueKey
+            QuickFix summary issueType -> do
+                L.logNotice "Creating issue..."
+                issueKey <- Jira.createIssue jiraSettings summary issueType
+                L.logNotice $ "Created issue: " <> issueKey
+                _begin jiraSettings issueKey
 
 
-_begin :: String -> Program ()
-_begin issueKey = do
-    maybeIssue <- Jira.getIssue issueKey
+-- _begin :: String -> Program ()
+_begin settings issueKey = do
+    maybeIssue <- Jira.getIssue settings issueKey
     case maybeIssue of
         Nothing    -> L.logError $ "Issue " <> issueKey <> " not found"
         Just issue -> do
@@ -37,9 +40,9 @@ _begin issueKey = do
             L.logNotice $ getIssueSummary issue
             Git.openBranch =<< getBranchName issue
             L.logNotice "Setting JIRA issue to In Progress..."
-            Jira.toInProgress issue
+            Jira.toInProgress settings issue
             L.logNotice "Assigning JIRA issue to you..."
-            Jira.assignIssue $ Types.key issue
+            Jira.assignIssue settings $ Types.key issue
 
 
 getBranchName :: Types.Issue -> Program String
