@@ -27,8 +27,8 @@ _generateAuthOptions username password =
     basicAuth (B.pack username) (B.pack password)
 
 
-createPullRequest :: Types.Issue -> String -> Program String
-createPullRequest _ _ = return "hi"
+createPullRequest :: BitbucketConfig -> Types.Issue -> String -> Program String
+createPullRequest _ _ _ = return "hi"
 -- createPullRequest issue branchName = do
 --     Config { repoName, repoOrg } <- ask
 --     authOptions                  <- generateAuthOptions

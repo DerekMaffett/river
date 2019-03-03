@@ -30,7 +30,7 @@ begin issueSource = do
                 _begin jiraSettings issueKey
 
 
--- _begin :: String -> Program ()
+_begin :: JiraConfig -> String -> Program ()
 _begin settings issueKey = do
     maybeIssue <- Jira.getIssue settings issueKey
     case maybeIssue of
