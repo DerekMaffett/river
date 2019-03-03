@@ -45,7 +45,7 @@ newtype Body = Body
   { transition :: Types.Transition
   } deriving (Show, Generic, FromJSON, ToJSON)
 
--- transitionIssue :: Transition -> Types.Issue -> Program ()
+transitionIssue :: Transition -> JiraConfig -> Types.Issue -> Program ()
 transitionIssue transition settings issue = do
     url         <- getUrl
     authOptions <- generateAuthOptions settings

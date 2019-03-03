@@ -10,10 +10,12 @@ import           Data.Default.Class
 import           Data.Text
 import           GHC.Generics
 import           Network.HTTP.Req
-import           Config                         ( JiraConfig(..) )
+import           Config                         ( Program
+                                                , JiraConfig(..)
+                                                )
 import qualified Types
 
--- assignIssue :: String -> Program ()
+assignIssue :: JiraConfig -> String -> Program ()
 assignIssue settings issueKey = do
     url         <- getUrl
     authOptions <- generateAuthOptions settings
