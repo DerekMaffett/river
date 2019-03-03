@@ -1,8 +1,6 @@
 module Api.Jira.Base
     ( getBaseUrl
-    , _getBaseUrl
     , generateAuthOptions
-    , _generateAuthOptions
     )
 where
 
@@ -12,14 +10,12 @@ import           Network.HTTP.Req
 import           Config
 
 getBaseUrl settings = do
-    return $ _getBaseUrl (domainName settings)
-
-_getBaseUrl jiraDomain =
-    https (T.pack jiraDomain <> ".atlassian.net") /: "rest" /: "api" /: "latest"
+    return
+        $  https (T.pack (domainName settings) <> ".atlassian.net")
+        /: "rest"
+        /: "api"
+        /: "latest"
 
 generateAuthOptions (JiraConfig { auth }) = do
     let (BasicAuthCredentials username password) = auth
-    return $ _generateAuthOptions username password
-
-_generateAuthOptions username password =
-    basicAuth (B.pack username) (B.pack password)
+    return $ basicAuth (B.pack username) (B.pack password)
