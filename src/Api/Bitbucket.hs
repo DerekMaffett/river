@@ -1,6 +1,5 @@
 module Api.Bitbucket
     ( createPullRequest
-    , getMyself
     )
 where
 
@@ -19,18 +18,20 @@ host = https "api.bitbucket.org"
 baseUrl = host /: "2.0"
 
 generateAuthOptions (BasicAuthCredentials username password) =
-    _generateAuthOptions username password
-
-
-_generateAuthOptions username password =
     basicAuth (B.pack username) (B.pack password)
-
 
 createPullRequest :: BitbucketConfig -> Types.Issue -> String -> Program String
 createPullRequest (BitbucketConfig { defaultReviewers, repoName, repoOrg, auth }) issue branchName
     = do
-        body <- getBody
+        Config { workingBranch } <- ask
         runReq def $ do
+            user <-
+                responseBody
+                    <$> req GET
+                            (baseUrl /: "user")
+                            NoReqBody
+                            jsonResponse
+                            authOptions
             response <- req
                 POST
                 (  baseUrl
@@ -39,30 +40,24 @@ createPullRequest (BitbucketConfig { defaultReviewers, repoName, repoOrg, auth }
                 /: (T.pack repoName)
                 /: "pullrequests"
                 )
-                (ReqBodyJson body)
+                (ReqBodyJson $ getBody user workingBranch)
                 jsonResponse
                 authOptions
             return $ case (responseBody response :: Response) of
                 Response link -> link
   where
     authOptions = generateAuthOptions auth
-    getBody     = do
-        Config { workingBranch } <- ask
-        -- TODO: Fix
-        -- let reviewers = filter (/= user) defaultReviewers
-        let reviewers = defaultReviewers
-        return $ object
-            [ ("title" .= branchName)
-            , ("description" .= description)
-            , ("reviewers" .= reviewers)
-            , ("close_source_branch" .= True)
-            , (  "source"
-              .= object [("branch" .= object [("name" .= branchName)])]
-              )
-            , (  "destination"
-              .= object [("branch" .= object [("name" .= workingBranch)])]
-              )
-            ]
+    reviewers user = filter (/= (user :: Types.BitbucketUser)) defaultReviewers
+    getBody user workingBranch = object
+        [ ("title" .= branchName)
+        , ("description" .= description)
+        , ("reviewers" .= reviewers user)
+        , ("close_source_branch" .= True)
+        , ("source" .= object [("branch" .= object [("name" .= branchName)])])
+        , (  "destination"
+          .= object [("branch" .= object [("name" .= workingBranch)])]
+          )
+        ]
 
     description = case Types.description issue of
         Nothing   -> Types.summary issue
@@ -73,15 +68,3 @@ data Response = Response String
 
 instance FromJSON Response where
   parseJSON = withObject "object" $ \o -> Response <$> (o .: "links" >>= (.: "html") >>= (.: "href"))
-
-
-getMyself :: BasicAuthCredentials -> IO (Maybe Types.BitbucketUser)
-getMyself (BasicAuthCredentials username password) = do
-    runReq def $ do
-        response <- req GET
-                        (baseUrl /: "user")
-                        NoReqBody
-                        jsonResponse
-                        authOptions
-        return (responseBody response :: Maybe Types.BitbucketUser)
-    where authOptions = _generateAuthOptions username password
