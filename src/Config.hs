@@ -34,7 +34,6 @@ data JiraConfig = JiraConfig
   { projectKey :: String
   , domainName :: String
   , auth :: BasicAuthCredentials
-  , user :: Types.JiraUser
   }
 
 data RepoManager = Bitbucket BitbucketConfig
@@ -44,7 +43,6 @@ data BitbucketConfig = BitbucketConfig
   , repoOrg :: String
   , defaultReviewers :: [Types.BitbucketUser]
   , auth :: BasicAuthCredentials
-  , user :: Types.BitbucketUser
   }
 
 data Config = Config

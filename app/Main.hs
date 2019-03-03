@@ -12,8 +12,10 @@ import           GHC.Generics
 import           System.Exit
 import           Api.Jira                      as Jira
 import           Api.Bitbucket                 as Bitbucket
+import qualified Data.HashMap.Strict           as HM
 import           Data.Aeson                    as A
                                          hiding ( Options )
+import qualified Data.Aeson.Types              as AT
 import qualified System.Directory              as Dir
 import           System.Log.Logger
 
@@ -110,10 +112,11 @@ runProgram options = do
         Begin (BeginOptions { issueSource }) -> Begin.begin issueSource
         Review _ -> Review.review
         Init -> do
-            Config.Config { repoManager } <- Reader.ask
-            case repoManager of
-                Config.Bitbucket (Config.BitbucketConfig { user }) ->
-                    Reader.liftIO $ initializeReviewer user
+            return ()
+            -- Config.Config { repoManager } <- Reader.ask
+            -- case repoManager of
+            --     Config.Bitbucket (Config.BitbucketConfig { user }) ->
+            --         Reader.liftIO $ initializeReviewer user
 
 initializeReviewer :: Types.BitbucketUser -> IO ()
 initializeReviewer bitbucketUser = do
@@ -129,144 +132,77 @@ initializeReviewer bitbucketUser = do
   --                                <> [self]
   --       }
 
-data RiverConfig = RiverConfig
-  { repoManager :: RepoManager
-  , projectManager :: ProjectManager
-  , workingBranch :: String
-  , bugCategories :: [String]
-  } deriving (Generic, A.FromJSON)
-
-data ProjectManager = Jira JiraConfig
-
-data JiraConfig = JiraConfig
-  { projectKey :: String
-  , domainName :: String
-  }
-
-instance A.FromJSON ProjectManager where
-  parseJSON = withObject "object" $ \o -> do
-    managerType <- o .: "name"
-    settings <- o .: "settings"
-    case managerType of
-      "jira" -> do
-        projectKey <- settings .: "projectKey"
-        domainName <- settings .: "domainName"
-        return $ Jira $ JiraConfig { projectKey = projectKey, domainName = domainName }
-      otherKey -> fail $ otherKey <> " is not an allowed project manager"
-
-data RepoManager = Bitbucket BitbucketConfig
-
-data BitbucketConfig = BitbucketConfig
-  { repoName :: String
-  , repoOrg :: String
-  , defaultReviewers :: [Types.BitbucketUser]
-  }
-
-instance A.FromJSON RepoManager where
-  parseJSON = withObject "object" $ \o -> do
-    managerType <- o .: "name"
-    settings <- o .: "settings"
-    case managerType of
-      "bitbucket" -> do
-        repoName <- settings .: "repoName"
-        repoOrg <- settings .: "repoOrg"
-        defaultReviewers <- settings .: "defaultReviewers"
-        return $ Bitbucket $ BitbucketConfig
-          { repoName = repoName, repoOrg = repoOrg, defaultReviewers = defaultReviewers }
-      otherKey -> fail $ otherKey <> " is not an allowed repo manager"
-
-data JiraAuthCredentials = JiraAuthCredentials
-  { jira :: Config.BasicAuthCredentials } deriving (Generic, A.FromJSON)
-
-data BitbucketAuthCredentials = BitbucketAuthCredentials
-  { bitbucket :: Config.BasicAuthCredentials } deriving (Generic, A.FromJSON)
-
 configFromOptions :: Options -> IO Config.Config
 configFromOptions options = do
+    logger       <- initializeLogger options
     configExists <- Dir.doesFileExist ".river.json"
     envExists    <- Dir.doesFileExist ".river.env.json"
     unless configExists $ die ".river.json file does not exist!"
     unless envExists $ die ".river.env.json file does not exist!"
-    riverConfigResult <- A.eitherDecodeFileStrict' ".river.json"
-    logger            <- initializeLogger options
-    case riverConfigResult of
-        Left  riverError  -> die $ "river.json parsing error:\n" <> riverError
-        Right riverConfig -> do
-            projectManagerResult <- parseProjectManager riverConfig
-            case projectManagerResult of
-                Left  errorAction    -> errorAction
-                Right projectManager -> do
-                    repoManagerResult <- parseRepoManager riverConfig
-                    case repoManagerResult of
-                        Left  errorAction -> errorAction
-                        Right repoManager -> do
-                            return Config.Config
-                                { logger         = logger
-                                , projectManager = projectManager
-                                , repoManager    = repoManager
-                                , bugCategories  = bugCategories riverConfig
-                                , workingBranch  = workingBranch riverConfig
-                                }
+    combinedConfigResult <- getCombinedConfigsResult logger
+    case combinedConfigResult of
+        Left  errorMsg       -> die errorMsg
+        Right combinedConfig -> return combinedConfig
   where
-    parseProjectManager riverConfig = do
-        case projectManager riverConfig of
-            Jira (JiraConfig { projectKey, domainName }) -> do
-                envResult <- A.eitherDecodeFileStrict' ".river.env.json"
-                case envResult of
-                    Left envError ->
-                        return
-                            $  Left
-                            $  die
-                            $  "river.env.json parsing error:\n"
-                            <> envError
-                    Right jiraAuth -> do
-                        maybeUser <- Jira.getMyself domainName (jira jiraAuth)
-                        case maybeUser of
-                            Nothing ->
-                                return
-                                    $ Left
-                                    $ die
-                                          "Jira user not found. Are your credentials correct?"
-                            Just user ->
-                                return $ Right $ Config.Jira $ Config.JiraConfig
-                                    { projectKey = projectKey
-                                    , domainName = domainName
-                                    , auth       = (jira jiraAuth)
-                                    , user       = user
-                                    }
+    getCombinedConfigsResult logger = do
+        riverConfigValueResult <-
+            (A.eitherDecodeFileStrict' ".river.json" :: IO
+                  (Either String A.Object)
+            )
+        envConfigValueResult <-
+            (A.eitherDecodeFileStrict' ".river.env.json" :: IO
+                  (Either String A.Object)
+            )
+        return $ mergeConfigResults logger
+                                    riverConfigValueResult
+                                    envConfigValueResult
 
-    parseRepoManager riverConfig = do
-        case repoManager riverConfig of
-            Bitbucket (BitbucketConfig { repoName, repoOrg, defaultReviewers })
-                -> do
-                    envResult <- A.eitherDecodeFileStrict' ".river.env.json"
-                    case envResult of
-                        Left envError ->
-                            return
-                                $  Left
-                                $  die
-                                $  "river.env.json parsing error:\n"
-                                <> envError
-                        Right bitbucketAuth -> do
-                            maybeUser <- Bitbucket.getMyself
-                                (bitbucket bitbucketAuth)
-                            case maybeUser of
-                                Nothing ->
-                                    return
-                                        $ Left
-                                        $ die
-                                              "Bitbucket user not found. Are your credentials correct?"
-                                Just user ->
-                                    return
-                                        $ Right
-                                        $ Config.Bitbucket
-                                        $ Config.BitbucketConfig
-                                              { repoName = repoName
-                                              , repoOrg = repoOrg
-                                              , defaultReviewers = defaultReviewers
-                                              , auth = bitbucket bitbucketAuth
-                                              , user = user
-                                              }
+    mergeConfigResults logger configAResult configBResult = do
+        configA <- configAResult
+        configB <- configBResult
+        let mergedValues = Object $ HM.union configA configB
+        AT.parseEither (configParseJSON logger) mergedValues
+
+    configParseJSON logger = withObject "object" $ \o -> do
+        repoManager         <- o .: "repoManager"
+        repoManagerType     <- repoManager .: "name"
+        repoManagerSettings <- repoManager .: "settings"
+        parsedRepoManager   <- case repoManagerType of
+            "bitbucket" -> do
+                repoName         <- repoManagerSettings .: "repoName"
+                repoOrg          <- repoManagerSettings .: "repoOrg"
+                defaultReviewers <- repoManagerSettings .: "defaultReviewers"
+                auth             <- o .: "bitbucket"
+                return $ Config.Bitbucket $ Config.BitbucketConfig
+                    { repoName         = repoName
+                    , repoOrg          = repoOrg
+                    , defaultReviewers = defaultReviewers
+                    , auth             = auth
+                    }
+            otherKey -> fail $ otherKey <> " is not an allowed repo manager"
+        projectManager         <- o .: "projectManager"
+        projectManagerType     <- projectManager .: "name"
+        projectManagerSettings <- projectManager .: "settings"
+        parsedProjectManager   <- case projectManagerType of
+            "jira" -> do
+                projectKey <- projectManagerSettings .: "projectKey"
+                domainName <- projectManagerSettings .: "domainName"
+                auth       <- o .: "jira"
+                return $ Config.Jira $ Config.JiraConfig
+                    { projectKey = projectKey
+                    , domainName = domainName
+                    , auth       = auth
+                    }
+            otherKey -> fail $ otherKey <> " is not an allowed project manager"
+        workingBranch <- o .: "workingBranch"
+        bugCategories <- o .: "bugCategories"
+        return $ Config.Config
+            { logger         = logger
+            , projectManager = parsedProjectManager
+            , repoManager    = parsedRepoManager
+            , workingBranch  = workingBranch
+            , bugCategories  = bugCategories
+            }
 
 initializeLogger :: Options -> IO String
 initializeLogger options = do

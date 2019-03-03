@@ -26,4 +26,7 @@ assignIssue settings issueKey = do
     getUrl = do
         baseUrl <- getBaseUrl settings
         return $ baseUrl /: "issue" /: (pack issueKey)
-    requestBody = object [("fields" .= object [("assignee" .= user settings)])]
+    -- TODO: string hack
+    requestBody =
+        object
+            [("fields" .= object [("assignee" .= ("user settings" :: Text))])]

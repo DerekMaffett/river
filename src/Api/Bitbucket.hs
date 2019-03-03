@@ -27,7 +27,7 @@ _generateAuthOptions username password =
 
 
 createPullRequest :: BitbucketConfig -> Types.Issue -> String -> Program String
-createPullRequest (BitbucketConfig { user, defaultReviewers, repoName, repoOrg, auth }) issue branchName
+createPullRequest (BitbucketConfig { defaultReviewers, repoName, repoOrg, auth }) issue branchName
     = do
         body <- getBody
         runReq def $ do
@@ -48,7 +48,9 @@ createPullRequest (BitbucketConfig { user, defaultReviewers, repoName, repoOrg, 
     authOptions = generateAuthOptions auth
     getBody     = do
         Config { workingBranch } <- ask
-        let reviewers = filter (/= user) defaultReviewers
+        -- TODO: Fix
+        -- let reviewers = filter (/= user) defaultReviewers
+        let reviewers = defaultReviewers
         return $ object
             [ ("title" .= branchName)
             , ("description" .= description)
