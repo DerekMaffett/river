@@ -21,8 +21,6 @@ data Response = Response
   } deriving (Show, Generic, FromJSON)
 
 createIssue settings summary issueType = do
-    url         <- getUrl
-    authOptions <- generateAuthOptions settings
     runReq def $ do
         response <- req POST
                         url
@@ -31,11 +29,10 @@ createIssue settings summary issueType = do
                         authOptions
         return $ key . responseBody $ response
   where
-    projectKey = Config.projectKey settings
-    getUrl     = do
-        baseUrl <- getBaseUrl settings
-        return $ baseUrl /: "issue"
-    request = object
+    projectKey  = Config.projectKey settings
+    authOptions = generateAuthOptions settings
+    url         = (getBaseUrl settings) /: "issue"
+    request     = object
         [ "fields"
               .= (object
                      [ "summary" .= summary

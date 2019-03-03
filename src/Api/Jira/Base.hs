@@ -9,13 +9,12 @@ import qualified Data.ByteString.Char8         as B
 import           Network.HTTP.Req
 import           Config
 
-getBaseUrl settings = do
-    return
-        $  https (T.pack (domainName settings) <> ".atlassian.net")
+getBaseUrl settings =
+    https (T.pack (domainName settings) <> ".atlassian.net")
         /: "rest"
         /: "api"
         /: "latest"
 
-generateAuthOptions (JiraConfig { auth }) = do
+generateAuthOptions (JiraConfig { auth }) =
     let (BasicAuthCredentials username password) = auth
-    return $ basicAuth (B.pack username) (B.pack password)
+    in  basicAuth (B.pack username) (B.pack password)

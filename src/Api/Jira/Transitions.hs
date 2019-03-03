@@ -47,8 +47,6 @@ newtype Body = Body
 
 transitionIssue :: Transition -> JiraConfig -> Types.Issue -> Program ()
 transitionIssue transition settings issue = do
-    url         <- getUrl
-    authOptions <- generateAuthOptions settings
     logDebug $ "Issue: " <> show issue
     case maybeTransition of
         Nothing ->
@@ -65,10 +63,9 @@ transitionIssue transition settings issue = do
                 (authOptions <> urlOptions)
             return ()
   where
-    getUrl = do
-        baseUrl <- getBaseUrl settings
-        return
-            $  baseUrl
+    authOptions = generateAuthOptions settings
+    url =
+        (getBaseUrl settings)
             /: "issue"
             /: (pack . Types.key $ issue)
             /: "transitions"
