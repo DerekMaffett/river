@@ -18,15 +18,20 @@ import qualified Types
 assignIssue :: JiraConfig -> String -> Program ()
 assignIssue settings issueKey = do
     url         <- getUrl
+    myselfUrl   <- getMyselfUrl
     authOptions <- generateAuthOptions settings
     runReq def $ do
-        req PUT url (ReqBodyJson $ requestBody) ignoreResponse authOptions
+        user <-
+            responseBody
+                <$> req GET myselfUrl NoReqBody jsonResponse authOptions
+        req PUT url (ReqBodyJson $ requestBody user) ignoreResponse authOptions
         return ()
   where
     getUrl = do
         baseUrl <- getBaseUrl settings
         return $ baseUrl /: "issue" /: (pack issueKey)
-    -- TODO: string hack
-    requestBody =
-        object
-            [("fields" .= object [("assignee" .= ("user settings" :: Text))])]
+    getMyselfUrl = do
+        baseUrl <- getBaseUrl settings
+        return $ baseUrl /: "myself"
+    requestBody user =
+        object [("fields" .= object [("assignee" .= (user :: Types.JiraUser))])]
