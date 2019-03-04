@@ -5,8 +5,10 @@ module Config
     , ProjectManager(..)
     , JiraConfig(..)
     , BitbucketConfig(..)
+    , GithubConfig(..)
     , BasicAuthCredentials(..)
     , ask
+    , liftIO
     )
 where
 
@@ -16,6 +18,9 @@ import           GHC.Generics
 import           Data.Aeson
 
 type Program = Reader.ReaderT Config IO
+
+liftIO :: IO a -> Program a
+liftIO = Reader.liftIO
 
 ask :: Program Config
 ask = Reader.ask
@@ -36,7 +41,13 @@ data JiraConfig = JiraConfig
   , auth :: BasicAuthCredentials
   }
 
-data RepoManager = Bitbucket BitbucketConfig
+data RepoManager = Bitbucket BitbucketConfig | Github GithubConfig
+
+data GithubConfig = GithubConfig
+  { repoName :: String
+  , repoOrg :: String
+  , auth :: BasicAuthCredentials
+  }
 
 data BitbucketConfig = BitbucketConfig
   { repoName :: String

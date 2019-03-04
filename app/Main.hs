@@ -179,6 +179,15 @@ configFromOptions options = do
                     , defaultReviewers = defaultReviewers
                     , auth             = auth
                     }
+            "github" -> do
+                repoName <- repoManagerSettings .: "repoName"
+                repoOrg  <- repoManagerSettings .: "repoOrg"
+                auth     <- o .: "github"
+                return $ Config.Github $ Config.GithubConfig
+                    { repoName = repoName
+                    , repoOrg  = repoOrg
+                    , auth     = auth
+                    }
             otherKey -> fail $ otherKey <> " is not an allowed repo manager"
         projectManager         <- o .: "projectManager"
         projectManagerType     <- projectManager .: "name"

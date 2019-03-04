@@ -5,6 +5,7 @@ where
 
 import qualified Api.Jira                      as Jira
 import qualified Api.Bitbucket                 as Bitbucket
+import qualified Api.Github                    as Github
 import qualified Git
 import qualified BugTracker
 import           Control.Monad
@@ -41,11 +42,15 @@ setIssueToCodeReview issue = do
 
 openPullRequest issue branchName = do
     Config { repoManager } <- ask
+    L.logNotice "Creating pull request..."
     case repoManager of
         Bitbucket settings -> do
-            L.logNotice "Creating pull request..."
             link <- Bitbucket.createPullRequest settings issue branchName
             L.logNotice $ "\nBitbucket link:\n" <> link
+        Github settings -> do
+            value <- Github.createPullRequest settings issue branchName
+            L.logNotice (show value)
+            -- L.logNotice $ "\nGithub link:\n" <> link
 
 getIssueKey branchName = case Git.getIssueKeyFromBranch branchName of
     Left _ -> do

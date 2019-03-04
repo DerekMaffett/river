@@ -17,18 +17,20 @@ import           Control.Monad
 
 setOrigin :: Program ()
 setOrigin = do
-    Config { repoManager } <- ask
-    case repoManager of
-        Bitbucket (BitbucketConfig { repoName, repoOrg }) -> do
-            originExists <- includesOrigin <$> runProcess "git remote"
-            when originExists $ runProcess' "git remote remove river-origin"
-            runProcess'
-                $  "git remote add river-origin git@bitbucket.org:"
-                <> repoOrg
-                <> "/"
-                <> repoName
-                <> ".git"
+    originExists <- includesOrigin <$> runProcess "git remote"
+    when originExists $ runProcess' "git remote remove river-origin"
+    originAddress <- getOrigin
+    runProcess' $ "git remote add river-origin " <> originAddress
     where includesOrigin = elem "river-origin" . lines
+
+
+getOrigin = do
+    Config { repoManager } <- ask
+    return $ case repoManager of
+        Bitbucket (BitbucketConfig { repoName, repoOrg }) ->
+            "git@bitbucket.org:" <> repoOrg <> "/" <> repoName <> ".git"
+        Github (GithubConfig { repoName, repoOrg }) ->
+            "git@github.com:" <> repoOrg <> "/" <> repoName <> ".git"
 
 openBranch :: String -> Program ()
 openBranch branchName = do

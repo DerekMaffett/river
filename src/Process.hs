@@ -10,7 +10,6 @@ import           System.IO
 import           System.Exit
 import           Config
 import           Logger
-import           Control.Monad.Reader
 import           System.Process                 ( readCreateProcessWithExitCode
                                                 , shell
                                                 )
@@ -27,7 +26,7 @@ runProcess shellCommand = do
     return output
 
 
-runProcessNonStrict :: String -> ReaderT Config IO (ExitCode, String, String)
+runProcessNonStrict :: String -> Program (ExitCode, String, String)
 runProcessNonStrict shellCommand = _runProcess shellCommand []
 
 

@@ -1,6 +1,9 @@
 import           Test.Hspec
-import           Git
+import qualified Git
+import           Data.GraphQL.AST
+import           Data.GraphQL.Encoder
 import           Data.Either
+import           Data.Text                     as T
 
 main = hspec spec
 
@@ -24,3 +27,24 @@ spec = do
                 shouldSatisfy
                     (Git.getIssueKeyFromBranch "DSP-PROJECT-stuff")
                     isLeft
+            it "testing assumptions" $ do
+                shouldBe
+                    (operationDefinition $ Query $ Node
+                        ""
+                        []
+                        []
+                        [ SelectionField $ Field
+                              ""
+                              "repository"
+                              [ Argument
+                                  "owner"
+                                  (ValueString . StringValue . T.pack $ "org")
+                              , Argument
+                                  "name"
+                                  (ValueString . StringValue . T.pack $ "name")
+                              ]
+                              []
+                              [SelectionField $ Field "" "id" [] [] []]
+                        ]
+                    )
+                    "query {viewer{id}}"
