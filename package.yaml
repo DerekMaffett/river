@@ -25,6 +25,7 @@ dependencies:
     - req
     - directory
     - aeson
+    - vector
     - text
     - data-default-class
     - bytestring

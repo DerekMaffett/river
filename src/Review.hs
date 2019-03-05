@@ -48,9 +48,8 @@ openPullRequest issue branchName = do
             link <- Bitbucket.createPullRequest settings issue branchName
             L.logNotice $ "\nBitbucket link:\n" <> link
         Github settings -> do
-            value <- Github.createPullRequest settings issue branchName
-            L.logNotice (show value)
-            -- L.logNotice $ "\nGithub link:\n" <> link
+            link <- Github.createPullRequest settings issue branchName
+            L.logNotice $ "\nGithub link:\n" <> link
 
 getIssueKey branchName = case Git.getIssueKeyFromBranch branchName of
     Left _ -> do

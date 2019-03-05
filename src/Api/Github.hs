@@ -10,6 +10,8 @@ import           Data.GraphQL.Encoder
 import           Data.Default.Class
 import           Data.Aeson                    as A
 import qualified Data.Text                     as T
+import           Data.Maybe
+import qualified Data.Vector                   as V
 import           GHC.Generics
 import           Debug.Trace
 import           Network.HTTP.Req
@@ -26,6 +28,20 @@ instance FromJSON RepoId where
     parseJSON = withObject "object" $ \o -> do
         repoId <- o .: "data" >>= (.: "repository") >>= (.: "id")
         return $ RepoId repoId
+
+data Permalink = Permalink String deriving (Show)
+
+instance FromJSON Permalink where
+    parseJSON = withObject "object" $ \o -> do
+        errors <- o .:? "errors"
+        case (errors) of
+          Nothing -> do
+            permalink <- o .: "data" >>= (.: "createPullRequest") >>= (.: "pullRequest") >>= (.: "permalink")
+            return $ Permalink permalink
+          Just errors -> withArray "array of errors" (\a -> do
+              errorsArray <- mapM (\arrayContent ->
+                  withObject "object" (\arrayItem -> arrayItem .: "message") arrayContent) (V.toList a)
+              fail $ unlines errorsArray) errors
 
 
 createPullRequest (GithubConfig { repoOrg, repoName, auth }) issue branchName =
@@ -51,6 +67,58 @@ createPullRequest (GithubConfig { repoOrg, repoName, auth }) issue branchName =
                           [SelectionField $ Field "" "id" [] [] []]
                     ]
                 )
+        let
+            createPullRequestQuery (RepoId repoId)
+                = (operationDefinition $ Mutation $ Node
+                      ""
+                      []
+                      []
+                      [ SelectionField $ Field
+                            ""
+                            "createPullRequest"
+                            [ Argument
+                                  "input"
+                                  ( ValueObject
+                                  . ObjectValue
+                                  $ [ ObjectField "baseRefName"
+                                    $ ValueString
+                                    . StringValue
+                                    $ "master"
+                                    , ObjectField "headRefName"
+                                    $ ValueString
+                                    . StringValue
+                                    . T.pack
+                                    $ branchName
+                                    , ObjectField "title"
+                                    $ ValueString
+                                    . StringValue
+                                    . T.pack
+                                    $ branchName
+                                    , ObjectField "repositoryId"
+                                    $ ValueString
+                                    . StringValue
+                                    $ repoId
+                                    , ObjectField "body"
+                                    $ ValueString
+                                    . StringValue
+                                    . T.pack
+                                    $ fromMaybe (Types.summary issue)
+                                                (Types.description issue)
+                                    ]
+                                  )
+                            ]
+                            []
+                            [ SelectionField $ Field
+                                  ""
+                                  "pullRequest"
+                                  []
+                                  []
+                                  [ SelectionField
+                                        $ Field "" "permalink" [] [] []
+                                  ]
+                            ]
+                      ]
+                  )
         let body graphqlQuery = object [("query" .= graphqlQuery)]
         let headers = header (B.pack "User-Agent") (B.pack repoOrg)
         runReq def $ do
@@ -60,4 +128,11 @@ createPullRequest (GithubConfig { repoOrg, repoName, auth }) issue branchName =
                 (ReqBodyJson $ body getRepoIdQuery)
                 jsonResponse
                 (authOptions <> headers)
-            return (repoId :: RepoId)
+            response <- req
+                POST
+                graphqlUrl
+                (ReqBodyJson $ body (createPullRequestQuery repoId))
+                jsonResponse
+                (authOptions <> headers)
+            let (Permalink link) = (responseBody response :: Permalink)
+            return link

@@ -29,22 +29,56 @@ spec = do
                     isLeft
             it "testing assumptions" $ do
                 shouldBe
-                    (operationDefinition $ Query $ Node
+                    (operationDefinition $ Mutation $ Node
                         ""
                         []
                         []
                         [ SelectionField $ Field
                               ""
-                              "repository"
+                              "createPullRequest"
                               [ Argument
-                                  "owner"
-                                  (ValueString . StringValue . T.pack $ "org")
-                              , Argument
-                                  "name"
-                                  (ValueString . StringValue . T.pack $ "name")
+                                    "input"
+                                    ( ValueObject
+                                    . ObjectValue
+                                    $ [ ObjectField "baseRefName"
+                                      $ ValueString
+                                      . StringValue
+                                      $ "master"
+                                      , ObjectField "headRefName"
+                                      $ ValueString
+                                      . StringValue
+                                      $ "test-branch"
+                                      , ObjectField "title"
+                                      $ ValueString
+                                      . StringValue
+                                      $ "test-title"
+                                      , ObjectField "repositoryId"
+                                      $ ValueString
+                                      . StringValue
+                                      $ "test-repoId"
+                                      , ObjectField "body"
+                                      $ ValueString
+                                      . StringValue
+                                      $ "test-body"
+                                      ]
+                                    )
                               ]
                               []
-                              [SelectionField $ Field "" "id" [] [] []]
+                              [ SelectionField $ Field
+                                    ""
+                                    "pullRequest"
+                                    []
+                                    []
+                                    [ SelectionField
+                                          $ Field "" "permalink" [] [] []
+                                    ]
+                              ]
                         ]
                     )
-                    "query {viewer{id}}"
+                    ""
+  --                   mutation CreatePR {
+  -- createPullRequest(input:{baseRefName:"master",headRefName:"test",title:"test title",repositoryId:"MDEwOlJlcG9zaXRvcnkxNzEzNjk4OTY="}) {
+  --   pullRequest {
+  --     permalink
+  --   }
+  -- }
