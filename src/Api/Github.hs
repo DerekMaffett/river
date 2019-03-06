@@ -13,6 +13,7 @@ import           Data.Aeson                    as A
 import qualified Data.Text                     as T
 import           Data.Maybe
 import qualified Data.Vector                   as V
+import           Control.Monad
 import           GHC.Generics
 import           Debug.Trace
 import           Network.HTTP.Req
@@ -49,6 +50,7 @@ instance FromJSON Permalink where
 
 createPullRequest (GithubConfig { repoOrg, repoName, auth }) issue branchName =
     do
+        Config { workingBranch } <- ask
         let authOptions = generateAuthOptions auth
         let
             getRepoIdQuery =
@@ -86,7 +88,8 @@ createPullRequest (GithubConfig { repoOrg, repoName, auth }) issue branchName =
                                   $ [ ObjectField "baseRefName"
                                     $ ValueString
                                     . StringValue
-                                    $ "master"
+                                    . T.pack
+                                    $ workingBranch
                                     , ObjectField "headRefName"
                                     $ ValueString
                                     . StringValue
@@ -140,4 +143,111 @@ createPullRequest (GithubConfig { repoOrg, repoName, auth }) issue branchName =
             let (Permalink link) = (responseBody response :: Permalink)
             return link
 
-mergePullRequest = undefined
+data PrId = PrId T.Text
+
+instance FromJSON PrId where
+    parseJSON = withObject "object" $ \o -> do
+        nodes <- o .: "data" >>= (.: "repository") >>= (.: "pullRequests") >>= (.: "nodes")
+        pullRequest <- withArray "array of pull requests" parseNodes nodes
+        id <- pullRequest .: "id"
+        return $ PrId id
+      where
+          parseNodes nodesArray = case V.length nodesArray of
+            1 -> withObject "pull request object" return (V.head nodesArray)
+            n -> fail $ (show n) <> " open pull requests found from the current branch to the working branch. There should be 1."
+
+
+
+mergePullRequest :: GithubConfig -> String -> Program ()
+mergePullRequest (GithubConfig { repoOrg, repoName, auth }) branchName = do
+    Config { workingBranch } <- ask
+    let body graphqlQuery = object [("query" .= graphqlQuery)]
+    let headers     = header (B.pack "User-Agent") (B.pack repoOrg)
+    let authOptions = generateAuthOptions auth
+    let
+        getRepoWithPrsQuery
+            = (operationDefinition $ Query $ Node
+                  ""
+                  []
+                  []
+                  [ SelectionField $ Field
+                        ""
+                        "repository"
+                        [ Argument
+                            "owner"
+                            (ValueString . StringValue . T.pack $ repoOrg)
+                        , Argument
+                            "name"
+                            (ValueString . StringValue . T.pack $ repoName)
+                        ]
+                        []
+                        [ SelectionField $ Field "" "id" [] [] []
+                        , SelectionField $ Field
+                            ""
+                            "pullRequests"
+                            [ Argument
+                                "baseRefName"
+                                ( ValueString
+                                . StringValue
+                                . T.pack
+                                $ workingBranch
+                                )
+                            , Argument
+                                "headRefName"
+                                (ValueString . StringValue . T.pack $ branchName
+                                )
+                            , Argument "first"  (ValueInt 10)
+                            , Argument "states" (ValueEnum . T.pack $ "OPEN")
+                            ]
+                            []
+                            [ SelectionField $ Field
+                                  ""
+                                  "nodes"
+                                  []
+                                  []
+                                  [SelectionField $ Field "" "id" [] [] []]
+                            ]
+                        ]
+                  ]
+              )
+    let mergePullRequestQuery (PrId prId) =
+            (operationDefinition $ Mutation $ Node
+                ""
+                []
+                []
+                [ SelectionField $ Field
+                      ""
+                      "mergePullRequest"
+                      [ Argument
+                            "input"
+                            ( ValueObject
+                            . ObjectValue
+                            $ [ ObjectField "pullRequestId"
+                                $ ValueString
+                                . StringValue
+                                $ prId
+                              ]
+                            )
+                      ]
+                      []
+                      [ SelectionField $ Field
+                            ""
+                            "pullRequest"
+                            []
+                            []
+                            [SelectionField $ Field "" "permalink" [] [] []]
+                      ]
+                ]
+            )
+    runReq def $ do
+        prId <- responseBody <$> req
+            POST
+            graphqlUrl
+            (ReqBodyJson $ body getRepoWithPrsQuery)
+            jsonResponse
+            (authOptions <> headers)
+        void $ req POST
+                   graphqlUrl
+                   (ReqBodyJson $ body (mergePullRequestQuery prId))
+                   ignoreResponse
+                   (authOptions <> headers)
