@@ -38,10 +38,12 @@ instance FromJSON Permalink where
           Nothing -> do
             permalink <- o .: "data" >>= (.: "createPullRequest") >>= (.: "pullRequest") >>= (.: "permalink")
             return $ Permalink permalink
-          Just errors -> withArray "array of errors" (\a -> do
-              errorsArray <- mapM (\arrayContent ->
-                  withObject "object" (\arrayItem -> arrayItem .: "message") arrayContent) (V.toList a)
-              fail $ unlines errorsArray) errors
+          Just errors -> withArray "array of errors" parseErrorsArray errors
+      where
+          parseError = withObject "object" (.: "message")
+          parseErrorsArray errorsArray = do
+            errorsArray <- mapM parseError (V.toList errorsArray)
+            fail $ unlines errorsArray
 
 
 createPullRequest (GithubConfig { repoOrg, repoName, auth }) issue branchName =
