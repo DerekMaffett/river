@@ -41,10 +41,9 @@ mergePullRequest branchName = do
     Config { repoManager } <- ask
     L.logNotice "Merging pull request..."
     case repoManager of
-        Bitbucket settings -> do
-            id <- Bitbucket.mergePullRequest settings branchName
-            liftIO $ putStrLn (show id)
-        Github settings -> Github.mergePullRequest settings branchName
+        Bitbucket settings -> Bitbucket.mergePullRequest settings branchName
+        Github    settings -> Github.mergePullRequest settings branchName
+    L.logNotice "Merge successful"
 
 
 getIssueKey branchName = case Git.getIssueKeyFromBranch branchName of

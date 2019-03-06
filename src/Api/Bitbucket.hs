@@ -10,6 +10,7 @@ import           Data.Default.Class
 import           Data.Aeson
 import qualified Data.Text                     as T
 import qualified Data.Vector                   as V
+import           Control.Monad
 import           GHC.Generics
 import           Debug.Trace
 import           Network.HTTP.Req
@@ -83,24 +84,29 @@ instance FromJSON PrId where
     where
       parseEntries entries = case V.length entries of
         1 -> withObject "pull request object" return (V.head entries)
-        n -> fail $ (show n) <> " open pull requests found under the current branch. Should be one."
+        n -> fail $ (show n) <> " open pull requests found from the current branch to the working branch. There should be 1."
 
 
-mergePullRequest :: BitbucketConfig -> String -> Program Integer
+mergePullRequest :: BitbucketConfig -> String -> Program ()
 mergePullRequest (BitbucketConfig { defaultReviewers, repoName, repoOrg, auth }) branchName
     = do
         Config { workingBranch } <- ask
-        prId                     <- runReq def $ do
-            responseBody <$> req GET
-                                 (getPullRequestsUrl repoOrg repoName)
-                                 NoReqBody
-                                 jsonResponse
-                                 (authOptions <> urlOptions workingBranch)
-            -- req POST (pullRequestsUrl /: "merge")
-        case prId of
-            PrId id -> return id
+        runReq def $ do
+            prId <- responseBody <$> req
+                GET
+                pullRequestsUrl
+                NoReqBody
+                jsonResponse
+                (authOptions <> urlOptions workingBranch)
+            let (PrId id) = prId
+            void $ req POST
+                       (pullRequestsUrl /: (T.pack . show $ id) /: "merge")
+                       (ReqBodyJson $ mergePullRequestBody)
+                       ignoreResponse
+                       authOptions
   where
-    authOptions = generateAuthOptions auth
+    pullRequestsUrl = getPullRequestsUrl repoOrg repoName
+    authOptions     = generateAuthOptions auth
     urlOptions workingBranch =
         "q"
             =: (  "source.branch.name="
@@ -110,4 +116,10 @@ mergePullRequest (BitbucketConfig { defaultReviewers, repoName, repoOrg, auth })
                <> " AND state="
                <> bitbucketQueryArg "OPEN"
                )
-    bitbucketQueryArg arg = "\"" <> T.pack arg <> "\""
+    mergePullRequestBody = object
+        [ ("close_source_branch" .= True)
+        , ("merge_strategy" .= ("merge_commit" :: T.Text))
+        ]
+
+
+bitbucketQueryArg arg = "\"" <> T.pack arg <> "\""
