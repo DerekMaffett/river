@@ -103,9 +103,11 @@ mergePullRequest (BitbucketConfig { defaultReviewers, repoName, repoOrg, auth })
     authOptions = generateAuthOptions auth
     urlOptions workingBranch =
         "q"
-            =: ("source.branch.name=\""
-               <> T.pack branchName
-               <> "\" AND destination.branch.name=\""
-               <> T.pack workingBranch
-               <> "\" AND state=\"OPEN\"" :: T.Text
+            =: (  "source.branch.name="
+               <> bitbucketQueryArg branchName
+               <> " AND destination.branch.name="
+               <> bitbucketQueryArg workingBranch
+               <> " AND state="
+               <> bitbucketQueryArg "OPEN"
                )
+    bitbucketQueryArg arg = "\"" <> T.pack arg <> "\""
