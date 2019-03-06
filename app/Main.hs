@@ -2,6 +2,7 @@ module Main where
 
 import qualified Begin
 import qualified Review
+import qualified Merge
 import qualified Config
 import qualified Types
 import qualified Git
@@ -28,9 +29,14 @@ data ReviewOptions = ReviewOptions
   { useDebugLogger :: Bool
   } deriving (Show)
 
+data MergeOptions = MergeOptions
+  { useDebugLogger :: Bool
+  } deriving (Show)
+
 data Options
   = Begin BeginOptions
   | Review ReviewOptions
+  | Merge MergeOptions
   | Init deriving (Show)
 
 debugModeFlag :: Parser Bool
@@ -85,6 +91,13 @@ reviewOpts = info optsParser desc
     desc       = fullDesc <> progDesc "Sets an issue to code review" <> header
         "Sets an issue to code review"
 
+mergeOpts :: ParserInfo Options
+mergeOpts = info optsParser desc
+  where
+    optsParser = Merge <$> MergeOptions <$> debugModeFlag <**> helper
+    desc =
+        fullDesc <> progDesc "Completes an issue" <> header "Completes an issue"
+
 opts :: ParserInfo Options
 opts = info optsParser desc
   where
@@ -93,6 +106,7 @@ opts = info optsParser desc
                 (  (command "init" initOpts)
                 <> (command "begin" beginOpts)
                 <> (command "pr" reviewOpts)
+                <> (command "merge" mergeOpts)
                 )
             <**> helper
     desc = fullDesc <> progDesc "Automates workflow for projects" <> header
@@ -111,6 +125,7 @@ runProgram options = do
     case options of
         Begin (BeginOptions { issueSource }) -> Begin.begin issueSource
         Review _ -> Review.review
+        Merge _ -> Merge.merge
         Init -> do
             return ()
             -- Config.Config { repoManager } <- Reader.ask
@@ -222,6 +237,8 @@ initializeLogger options = do
         Begin (BeginOptions { useDebugLogger }) ->
             if useDebugLogger then "DebugLogger" else "BasicLogger"
         Review (ReviewOptions { useDebugLogger }) ->
+            if useDebugLogger then "DebugLogger" else "BasicLogger"
+        Merge (MergeOptions { useDebugLogger }) ->
             if useDebugLogger then "DebugLogger" else "BasicLogger"
         Init -> "BasicLogger"
     level = case logger of

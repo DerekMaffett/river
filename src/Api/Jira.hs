@@ -4,6 +4,7 @@ module Api.Jira
     , module Api.Jira.Create
     , toInProgress
     , toCodeReview
+    , toDone
     )
 where
 
@@ -14,3 +15,4 @@ import           Api.Jira.Assign
 
 toInProgress = transitionIssue ToInProgress
 toCodeReview = transitionIssue ToCodeReview
+toDone = transitionIssue ToDone

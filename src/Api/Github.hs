@@ -1,5 +1,6 @@
 module Api.Github
     ( createPullRequest
+    , mergePullRequest
     )
 where
 
@@ -138,3 +139,5 @@ createPullRequest (GithubConfig { repoOrg, repoName, auth }) issue branchName =
                 (authOptions <> headers)
             let (Permalink link) = (responseBody response :: Permalink)
             return link
+
+mergePullRequest = undefined

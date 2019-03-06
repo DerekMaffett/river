@@ -24,11 +24,13 @@ import qualified Types                          ( Transition(..)
 data Transition
     = ToInProgress
     | ToCodeReview
+    | ToDone
     | Unknown deriving (Eq)
 
 transitionLookup =
     [ (ToInProgress, "river-to-in-progress")
     , (ToCodeReview, "river-to-code-review")
+    , (ToDone      , "river-to-done")
     ]
 
 inverseTransitionLookup = swap <$> transitionLookup
