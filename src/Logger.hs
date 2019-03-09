@@ -1,6 +1,7 @@
 module Logger where
 
 import           Config
+import           Utils                          ( trim )
 import           System.Exit
 import           System.Log.Logger
 import           System.IO
@@ -40,7 +41,7 @@ queryWithSuggestions question wordList =
         maybeInput <- getInputLine question
         case maybeInput of
             Nothing    -> return ""
-            Just input -> return input
+            Just input -> return . trim $ input
   where
     searchFn str = simpleCompletion <$> filter (str `isPrefixOf`) wordList
-    completionFn = completeWord Nothing " \t" $ return . searchFn
+    completionFn = completeWord Nothing "\t" $ return . searchFn

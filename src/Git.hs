@@ -8,9 +8,8 @@ where
 
 import qualified Logger                        as L
 import           Process
+import           Utils                          ( trim )
 import           Config
-import           Data.Char
-import           Data.List
 import           Text.Parsec
 import           Control.Monad
 
@@ -46,7 +45,6 @@ openBranch branchName = do
 
 getCurrentBranch :: Program String
 getCurrentBranch = trim <$> runProcess "git rev-parse --abbrev-ref HEAD"
-    where trim = dropWhile isSpace . dropWhileEnd isSpace
 
 getIssueKeyFromBranch :: String -> Either ParseError String
 getIssueKeyFromBranch branchName = parse parser "" branchName
