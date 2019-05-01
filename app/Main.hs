@@ -6,13 +6,11 @@ import qualified Merge
 import qualified Config
 import qualified Types
 import qualified Git
+import qualified Logger
 import           Control.Monad
 import qualified Control.Monad.Reader          as Reader
 import           Options.Applicative
-import           GHC.Generics
 import           System.Exit
-import           Api.Jira                      as Jira
-import           Api.Bitbucket                 as Bitbucket
 import qualified Data.HashMap.Strict           as HM
 import           Data.Aeson                    as A
                                          hiding ( Options )
@@ -116,7 +114,10 @@ opts = info optsParser desc
 main :: IO ()
 main = do
     options <- execParser opts
-    config  <- configFromOptions options
+    case options of
+        Init -> initializeApplication
+        _    -> return ()
+    config <- configFromOptions options
     Reader.runReaderT (runProgram options) config
 
 runProgram :: Options -> Config.Program ()
@@ -126,26 +127,8 @@ runProgram options = do
         Begin (BeginOptions { issueSource }) -> Begin.begin issueSource
         Review _ -> Review.review
         Merge _ -> Merge.merge
-        Init -> do
-            return ()
-            -- Config.Config { repoManager } <- Reader.ask
-            -- case repoManager of
-            --     Config.Bitbucket (Config.BitbucketConfig { user }) ->
-            --         Reader.liftIO $ initializeReviewer user
+        Init -> return ()
 
-initializeReviewer :: Types.BitbucketUser -> IO ()
-initializeReviewer bitbucketUser = do
-    return ()
-  --   result <- A.eitherDecodeFileStrict' ".river.json"
-  --   case result of
-  --       Left  errorMsg    -> die $ show errorMsg
-  --       Right riverConfig -> A.encodeFile ".river.json"
-  --           $ addSelfToConfig riverConfig bitbucketUser
-  -- where
-  --   addSelfToConfig riverConfig self = riverConfig
-  --       { defaultReviewers = (filter (/= self) . defaultReviewers $ riverConfig)
-  --                                <> [self]
-  --       }
 
 configFromOptions :: Options -> IO Config.Config
 configFromOptions options = do
@@ -227,6 +210,16 @@ configFromOptions options = do
             , workingBranch  = workingBranch
             , bugCategories  = bugCategories
             }
+
+initializeApplication :: IO ()
+initializeApplication = do
+    repoManager <- Logger.queryWithLimitedSuggestions'
+        "Select your repo manager: "
+        ["bitbucket", "github"]
+    case repoManager of
+        "bitbucket" -> return ()
+        "github"    -> return ()
+        _           -> die "Invalid project manager somehow selected"
 
 initializeLogger :: Options -> IO String
 initializeLogger options = do

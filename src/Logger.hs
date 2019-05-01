@@ -36,8 +36,12 @@ query question = Reader.liftIO $ runInputT defaultSettings $ do
         Just input -> return input
 
 queryWithSuggestions :: String -> [String] -> Program String
-queryWithSuggestions question wordList =
-    Reader.liftIO $ runInputT (setComplete completionFn defaultSettings) $ do
+queryWithSuggestions question =
+    Reader.liftIO <$> queryWithSuggestions' question
+
+queryWithSuggestions' :: String -> [String] -> IO String
+queryWithSuggestions' question wordList =
+    runInputT (setComplete completionFn defaultSettings) $ do
         maybeInput <- getInputLine question
         case maybeInput of
             Nothing    -> return ""
@@ -45,3 +49,15 @@ queryWithSuggestions question wordList =
   where
     searchFn str = simpleCompletion <$> filter (str `isPrefixOf`) wordList
     completionFn = completeWord Nothing "\t" $ return . searchFn
+
+queryWithLimitedSuggestions' :: String -> [String] -> IO String
+queryWithLimitedSuggestions' question wordList = do
+    answer <- queryWithSuggestions' question wordList
+    if answer `elem` wordList
+        then return answer
+        else do
+            putStrLn
+                $  answer
+                <> " is not a valid choice. Valid choices: "
+                <> show wordList
+            queryWithLimitedSuggestions' question wordList
