@@ -15,6 +15,8 @@ import qualified Data.HashMap.Strict           as HM
 import           Data.Aeson                    as A
                                          hiding ( Options )
 import qualified Data.Aeson.Types              as AT
+import qualified Data.Aeson.Encode.Pretty      as Pretty
+import qualified Data.ByteString.Lazy          as B
 import qualified System.Directory              as Dir
 import           System.Log.Logger
 
@@ -269,7 +271,7 @@ getConfigFromPrompt = do
             }
     getAuthCredentials serviceName = do
         username <- Logger.query' $ serviceName <> " username: "
-        password <- Logger.query' $ serviceName <> " password: "
+        password <- Logger.queryMasked' $ serviceName <> " password: "
         return $ Config.BasicAuthCredentials username password
     getWorkingBranch = Logger.queryWithSuggestions' "Main git branch: "
                                                     ["master", "develop"]
@@ -284,7 +286,8 @@ getConfigFromPrompt = do
 
 writePrivateInfo :: Config.Config -> IO ()
 writePrivateInfo config =
-    A.encodeFile ".river.env.json"
+    B.writeFile ".river.env.json"
+        $ Pretty.encodePretty
         $ A.Object
         . HM.unions
         . map (\(A.Object x) -> x)
@@ -302,7 +305,8 @@ writePrivateInfo config =
         A.object ["username" .= username, "password" .= password]
 
 writePublicInfo :: Config.Config -> IO ()
-writePublicInfo config = A.encodeFile ".river.json" publicConfigObject
+writePublicInfo config = B.writeFile ".river.json"
+    $ Pretty.encodePretty publicConfigObject
   where
     publicConfigObject = A.object
         [ "repoManager" .= repoManagerObject

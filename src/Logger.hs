@@ -31,6 +31,14 @@ logError msg = do
 query :: String -> Program String
 query = Reader.liftIO <$> query'
 
+queryMasked' :: String -> IO String
+queryMasked' question = runInputT defaultSettings $ do
+    maybeInput <- getPassword (Just '*') question
+    case maybeInput of
+        Nothing    -> return ""
+        Just input -> return input
+
+
 query' :: String -> IO String
 query' question = runInputT defaultSettings $ do
     maybeInput <- getInputLine question

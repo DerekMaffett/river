@@ -25,6 +25,7 @@ dependencies:
     - req
     - directory
     - aeson
+    - aeson-pretty
     - vector
     - text
     - data-default-class
