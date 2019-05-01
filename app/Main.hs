@@ -218,6 +218,8 @@ initializeApplication = do
     config <- getConfigFromPrompt
     writePrivateInfo config
     writePublicInfo config
+    putStrLn
+        "Config files written. Please add .river.env.json to your gitignore - it contains your passwords."
 
 getConfigFromPrompt :: IO Config.Config
 getConfigFromPrompt = do
@@ -235,7 +237,7 @@ getConfigFromPrompt = do
   where
     getRepoManager = do
         repoManager <- Logger.queryWithLimitedSuggestions'
-            "Select your repo manager: "
+            "Select your repo manager (tab for suggestions): "
             ["bitbucket", "github"]
         case repoManager of
             "bitbucket" -> getBitbucketRepoManager
@@ -273,15 +275,12 @@ getConfigFromPrompt = do
         username <- Logger.query' $ serviceName <> " username: "
         password <- Logger.queryMasked' $ serviceName <> " password: "
         return $ Config.BasicAuthCredentials username password
-    getWorkingBranch = Logger.queryWithSuggestions' "Main git branch: "
-                                                    ["master", "develop"]
-    getBugCategories = getBugCategoriesWithAccum []
-    getBugCategoriesWithAccum accum = do
-        category <- Logger.query' "Bug categories (\":w\" to finish): "
-        if category == ":w"
-            then return accum
-            else do
-                getBugCategoriesWithAccum $ category : accum
+    getWorkingBranch = Logger.queryWithSuggestions'
+        "Main git branch (tab for suggestions): "
+        ["master", "develop"]
+    getBugCategories =
+        words <$> Logger.query' "Bug categories (separate by spaces): "
+
 
 aesonPrettyConfig :: Pretty.Config
 aesonPrettyConfig = Pretty.Config
