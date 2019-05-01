@@ -283,11 +283,33 @@ getConfigFromPrompt = do
             else do
                 getBugCategoriesWithAccum $ category : accum
 
+aesonPrettyConfig :: Pretty.Config
+aesonPrettyConfig = Pretty.Config
+    { confIndent          = Pretty.Spaces 4
+    , confCompare         = Pretty.keyOrder
+        [ "workingBranch"
+        , "bugCategories"
+        , "repoManager"
+        , "projectManager"
+        , "name"
+        , "settings"
+        , "repoName"
+        , "repoOrg"
+        , "defaultReviewers"
+        , "projectKey"
+        , "domainName"
+        , "username"
+        , "password"
+        ]
+    , confNumFormat       = Pretty.Generic
+    , confTrailingNewline = False
+    }
+
 
 writePrivateInfo :: Config.Config -> IO ()
 writePrivateInfo config =
     B.writeFile ".river.env.json"
-        $ Pretty.encodePretty
+        $ Pretty.encodePretty' aesonPrettyConfig
         $ A.Object
         . HM.unions
         . map (\(A.Object x) -> x)
@@ -306,7 +328,7 @@ writePrivateInfo config =
 
 writePublicInfo :: Config.Config -> IO ()
 writePublicInfo config = B.writeFile ".river.json"
-    $ Pretty.encodePretty publicConfigObject
+    $ Pretty.encodePretty' aesonPrettyConfig publicConfigObject
   where
     publicConfigObject = A.object
         [ "repoManager" .= repoManagerObject
