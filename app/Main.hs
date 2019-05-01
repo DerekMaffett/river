@@ -213,13 +213,128 @@ configFromOptions options = do
 
 initializeApplication :: IO ()
 initializeApplication = do
-    repoManager <- Logger.queryWithLimitedSuggestions'
-        "Select your repo manager: "
-        ["bitbucket", "github"]
-    case repoManager of
-        "bitbucket" -> return ()
-        "github"    -> return ()
-        _           -> die "Invalid project manager somehow selected"
+    config <- getConfigFromPrompt
+    writePrivateInfo config
+    writePublicInfo config
+
+getConfigFromPrompt :: IO Config.Config
+getConfigFromPrompt = do
+    repoManager    <- getRepoManager
+    projectManager <- getProjectManager
+    workingBranch  <- getWorkingBranch
+    bugCategories  <- getBugCategories
+    return Config.Config
+        { logger         = "whatever"
+        , projectManager = projectManager
+        , repoManager    = repoManager
+        , workingBranch  = workingBranch
+        , bugCategories  = bugCategories
+        }
+  where
+    getRepoManager = do
+        repoManager <- Logger.queryWithLimitedSuggestions'
+            "Select your repo manager: "
+            ["bitbucket", "github"]
+        case repoManager of
+            "bitbucket" -> getBitbucketRepoManager
+            "github"    -> getGithubRepoManager
+            _           -> die "Invalid project manager somehow selected"
+    getBitbucketRepoManager = do
+        repoName <- Logger.query' "Repo name: "
+        repoOrg  <- Logger.query' "Repo org: "
+        auth     <- getAuthCredentials "Bitbucket"
+        return $ Config.Bitbucket $ Config.BitbucketConfig
+            { repoName         = repoName
+            , repoOrg          = repoOrg
+            , defaultReviewers = []
+            , auth             = auth
+            }
+    getGithubRepoManager = do
+        repoName <- Logger.query' "Repo name: "
+        repoOrg  <- Logger.query' "Repo org: "
+        auth     <- getAuthCredentials "Github"
+        return $ Config.Github $ Config.GithubConfig
+            { repoName = repoName
+            , repoOrg  = repoOrg
+            , auth     = auth
+            }
+    getProjectManager = do
+        projectKey <- Logger.query' "Jira project key: "
+        domainName <- Logger.query' "Jira domain name: "
+        auth       <- getAuthCredentials "Jira"
+        return $ Config.Jira $ Config.JiraConfig
+            { projectKey = projectKey
+            , domainName = domainName
+            , auth       = auth
+            }
+    getAuthCredentials serviceName = do
+        username <- Logger.query' $ serviceName <> " username: "
+        password <- Logger.query' $ serviceName <> " password: "
+        return $ Config.BasicAuthCredentials username password
+    getWorkingBranch = Logger.queryWithSuggestions' "Main git branch: "
+                                                    ["master", "develop"]
+    getBugCategories = getBugCategoriesWithAccum []
+    getBugCategoriesWithAccum accum = do
+        category <- Logger.query' "Bug categories (\":w\" to finish): "
+        if category == ":w"
+            then return accum
+            else do
+                getBugCategoriesWithAccum $ category : accum
+
+
+writePrivateInfo :: Config.Config -> IO ()
+writePrivateInfo config =
+    A.encodeFile ".river.env.json"
+        $ A.Object
+        . HM.unions
+        . map (\(A.Object x) -> x)
+        $ [repoManagerObject, projectManagerObject]
+  where
+    repoManagerObject = case Config.repoManager config of
+        Config.Bitbucket (Config.BitbucketConfig { auth }) ->
+            A.object ["bitbucket" .= (authObject auth)]
+        Config.Github (Config.GithubConfig { auth }) ->
+            A.object ["github" .= (authObject auth)]
+    projectManagerObject = case Config.projectManager config of
+        Config.Jira (Config.JiraConfig { auth }) ->
+            A.object ["jira" .= (authObject auth)]
+    authObject (Config.BasicAuthCredentials username password) =
+        A.object ["username" .= username, "password" .= password]
+
+writePublicInfo :: Config.Config -> IO ()
+writePublicInfo config = A.encodeFile ".river.json" publicConfigObject
+  where
+    publicConfigObject = A.object
+        [ "repoManager" .= repoManagerObject
+        , "projectManager" .= projectManagerObject
+        , "workingBranch" .= workingBranch
+        , "bugCategories" .= bugCategories
+        ]
+
+    repoManagerObject = case Config.repoManager config of
+        Config.Bitbucket (Config.BitbucketConfig { repoName, repoOrg, defaultReviewers })
+            -> A.object
+                [ "name" .= ("bitbucket" :: String)
+                , "settings" .= A.object
+                    [ "repoName" .= repoName
+                    , "repoOrg" .= repoOrg
+                    , "defaultReviewers" .= defaultReviewers
+                    ]
+                ]
+        Config.Github (Config.GithubConfig { repoName, repoOrg }) -> A.object
+            [ "name" .= ("github" :: String)
+            , "settings"
+                .= A.object ["repoName" .= repoName, "repoOrg" .= repoOrg]
+            ]
+    projectManagerObject = case Config.projectManager config of
+        Config.Jira (Config.JiraConfig { projectKey, domainName }) -> A.object
+            [ "name" .= ("jira" :: String)
+            , "settings" .= A.object
+                ["projectKey" .= projectKey, "domainName" .= domainName]
+            ]
+
+    workingBranch = Config.workingBranch config
+    bugCategories = Config.bugCategories config
 
 initializeLogger :: Options -> IO String
 initializeLogger options = do

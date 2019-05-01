@@ -29,7 +29,10 @@ logError msg = do
 -----------------------------------
 
 query :: String -> Program String
-query question = Reader.liftIO $ runInputT defaultSettings $ do
+query = Reader.liftIO <$> query'
+
+query' :: String -> IO String
+query' question = runInputT defaultSettings $ do
     maybeInput <- getInputLine question
     case maybeInput of
         Nothing    -> return ""
