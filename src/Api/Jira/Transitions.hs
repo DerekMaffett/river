@@ -1,6 +1,5 @@
 module Api.Jira.Transitions
     ( transitionIssue
-    , Transition(..)
     )
 where
 
@@ -21,40 +20,18 @@ import qualified Types                          ( Transition(..)
                                                 , Issue(..)
                                                 )
 
-data Transition
-    = ToInProgress
-    | ToCodeReview
-    | ToDone
-    | Unknown deriving (Eq)
-
-transitionLookup =
-    [ (ToInProgress, "river-to-in-progress")
-    , (ToCodeReview, "river-to-code-review")
-    , (ToDone      , "river-to-done")
-    ]
-
-inverseTransitionLookup = swap <$> transitionLookup
-
-convertToTransition transitionName =
-    (fromMaybe Unknown . lookup transitionName) inverseTransitionLookup
-convertToTransitionName transition =
-    (fromMaybe "unknown" . lookup transition) transitionLookup
-
-instance Show Transition where
-  show = convertToTransitionName
-
 newtype Body = Body
   { transition :: Types.Transition
   } deriving (Show, Generic, FromJSON, ToJSON)
 
-transitionIssue :: Transition -> JiraConfig -> Types.Issue -> Program ()
-transitionIssue transition settings issue = do
+transitionIssue :: String -> JiraConfig -> Types.Issue -> Program ()
+transitionIssue transitionLabel settings issue = do
     logDebug $ "Issue: " <> show issue
     case maybeTransition of
         Nothing ->
             logError
                 $  "Unable to find transition "
-                <> show transition
+                <> transitionLabel
                 <> "\n\nAvailable transitions: \n"
                 <> (unlines . fmap Types.name . Types.transitions) issue
         Just transition -> runReq def $ do
@@ -72,7 +49,6 @@ transitionIssue transition settings issue = do
             /: (pack . Types.key $ issue)
             /: "transitions"
 
-    urlOptions      = "expand" =: ("transitions" :: Text)
-    maybeTransition = find
-        ((== transition) . convertToTransition . Types.name)
-        (Types.transitions issue)
+    urlOptions = "expand" =: ("transitions" :: Text)
+    maybeTransition =
+        find ((== transitionLabel) . Types.name) (Types.transitions issue)

@@ -7,6 +7,7 @@ import qualified Config
 import qualified Types
 import qualified Git
 import qualified Logger
+import qualified Api.Jira                      as Jira
 import           Control.Monad
 import qualified Control.Monad.Reader          as Reader
 import           Options.Applicative
@@ -194,13 +195,19 @@ configFromOptions options = do
         projectManagerSettings <- projectManager .: "settings"
         parsedProjectManager   <- case projectManagerType of
             "jira" -> do
-                projectKey <- projectManagerSettings .: "projectKey"
-                domainName <- projectManagerSettings .: "domainName"
-                auth       <- o .: "jira"
+                projectKey   <- projectManagerSettings .: "projectKey"
+                domainName   <- projectManagerSettings .: "domainName"
+                onStart      <- projectManagerSettings .: "onStart"
+                onPRCreation <- projectManagerSettings .: "onPRCreation"
+                onMerge      <- projectManagerSettings .: "onMerge"
+                auth         <- o .: "jira"
                 return $ Config.Jira $ Config.JiraConfig
-                    { projectKey = projectKey
-                    , domainName = domainName
-                    , auth       = auth
+                    { projectKey   = projectKey
+                    , domainName   = domainName
+                    , onStart      = onStart
+                    , onPRCreation = onPRCreation
+                    , onMerge      = onMerge
+                    , auth         = auth
                     }
             otherKey -> fail $ otherKey <> " is not an allowed project manager"
         workingBranch <- o .: "workingBranch"
@@ -266,12 +273,76 @@ getConfigFromPrompt = do
         projectKey <- Logger.query' "Jira project key: "
         domainName <- Logger.query' "Jira domain name: "
         auth       <- getAuthCredentials "Jira"
+        let partialJiraConfig = Config.JiraConfig
+                { projectKey = projectKey
+                , domainName = domainName
+                , auth       = auth
+                }
+        onStart      <- getTransitionName partialJiraConfig "starting a task"
+        onPRCreation <- getOptionalTransitionName partialJiraConfig
+                                                  "starting a PR"
+        onMerge <- getTransitionName partialJiraConfig "merging a PR"
         return $ Config.Jira $ Config.JiraConfig
-            { projectKey = projectKey
-            , domainName = domainName
-            , auth       = auth
+            { projectKey   = projectKey
+            , domainName   = domainName
+            , onStart      = onStart
+            , onPRCreation = onPRCreation
+            , onMerge      = onMerge
+            , auth         = auth
             }
+    getTransitionName jiraConfig reasonForTransition = getTransitionName'
+        jiraConfig
+        Logger.queryWithLimitedSuggestions'
+        reasonForTransition
+        (  "Select correct transition for "
+        <> reasonForTransition
+        <> " (tab for suggestions): "
+        )
+    getOptionalTransitionName jiraConfig reasonForTransition =
+        (\label -> if label == "" then Nothing else Just label)
+            <$> getTransitionName'
+                    jiraConfig
+                    Logger.queryWithSuggestions'
+                    reasonForTransition
+                    (  "Select correct transition for "
+                    <> reasonForTransition
+                    <> ". Leave empty for none. (tab for suggestions): "
+                    )
+    getTransitionName'
+        :: Config.JiraConfig
+        -> (String -> [String] -> IO String)
+        -> String
+        -> String
+        -> IO String
+    getTransitionName' jiraConfig queryFn reasonForTransition prompt = do
+        issueKey <-
+            (\issueNumber ->
+                    (Config.projectKey jiraConfig) <> "-" <> issueNumber
+                )
+                <$> Logger.query'
+                        (  "Please provide an example task prior to "
+                        <> reasonForTransition
+                        <> ": "
+                        <> (Config.projectKey jiraConfig)
+                        <> "-"
+                        )
+        maybeIssue <- Jira.getIssue jiraConfig issueKey
+        case maybeIssue of
+            Nothing -> do
+                putStrLn $ "Issue " <> issueKey <> " not found"
+                getTransitionName' jiraConfig queryFn reasonForTransition prompt
+            Just issue -> do
+                let transitionNames =
+                        (map (Types.name :: Types.Transition -> String))
+                            . Types.transitions
+                            $ issue
+                queryFn prompt transitionNames
+
+
+
+
     getAuthCredentials serviceName = do
+        when (serviceName == "Jira") $ putStrLn "Jira username is your email"
         username <- Logger.query' $ serviceName <> " username: "
         password <- Logger.queryMasked' $ serviceName <> " password: "
         return $ Config.BasicAuthCredentials username password
@@ -352,11 +423,17 @@ writePublicInfo config = B.writeFile ".river.json"
                 .= A.object ["repoName" .= repoName, "repoOrg" .= repoOrg]
             ]
     projectManagerObject = case Config.projectManager config of
-        Config.Jira (Config.JiraConfig { projectKey, domainName }) -> A.object
-            [ "name" .= ("jira" :: String)
-            , "settings" .= A.object
-                ["projectKey" .= projectKey, "domainName" .= domainName]
-            ]
+        Config.Jira (Config.JiraConfig { projectKey, domainName, onStart, onPRCreation, onMerge })
+            -> A.object
+                [ "name" .= ("jira" :: String)
+                , "settings" .= A.object
+                    [ "projectKey" .= projectKey
+                    , "domainName" .= domainName
+                    , "onStart" .= onStart
+                    , "onPRCreation" .= onPRCreation
+                    , "onMerge" .= onMerge
+                    ]
+                ]
 
     workingBranch = Config.workingBranch config
     bugCategories = Config.bugCategories config

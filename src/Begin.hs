@@ -40,7 +40,7 @@ _begin settings issueKey = do
             L.logNotice $ getIssueSummary issue
             Git.openBranch =<< getBranchName issue
             L.logNotice "Setting JIRA issue to In Progress..."
-            Jira.toInProgress settings issue
+            Jira.transitionIssue (Config.onStart settings) settings issue
             L.logNotice "Assigning JIRA issue to you..."
             Jira.assignIssue settings $ Types.key issue
 

@@ -34,7 +34,7 @@ closeIssue issue = do
     case projectManager of
         Jira settings -> do
             L.logNotice "Setting JIRA issue to Done..."
-            Jira.toDone settings issue
+            Jira.transitionIssue (Config.onMerge settings) settings issue
 
 
 mergePullRequest branchName = do

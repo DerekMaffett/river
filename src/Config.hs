@@ -38,6 +38,9 @@ data ProjectManager = Jira JiraConfig
 data JiraConfig = JiraConfig
   { projectKey :: String
   , domainName :: String
+  , onStart :: String
+  , onPRCreation :: Maybe String
+  , onMerge :: String
   , auth :: BasicAuthCredentials
   }
 

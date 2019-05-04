@@ -36,8 +36,11 @@ setIssueToCodeReview issue = do
     Config { projectManager } <- ask
     case projectManager of
         Jira settings -> do
-            L.logNotice "Setting JIRA issue to Code Review..."
-            Jira.toCodeReview settings issue
+            case Config.onPRCreation settings of
+                Nothing              -> return ()
+                Just transitionLabel -> do
+                    L.logNotice "Setting JIRA issue to Code Review..."
+                    Jira.transitionIssue transitionLabel settings issue
 
 
 openPullRequest issue branchName = do
