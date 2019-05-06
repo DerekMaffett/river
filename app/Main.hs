@@ -34,11 +34,15 @@ data MergeOptions = MergeOptions
   { useDebugLogger :: Bool
   } deriving (Show)
 
+data InitOptions = InitOptions
+  { forceRebuild :: Bool
+  } deriving (Show)
+
 data Options
   = Begin BeginOptions
   | Review ReviewOptions
   | Merge MergeOptions
-  | Init deriving (Show)
+  | Init InitOptions deriving (Show)
 
 debugModeFlag :: Parser Bool
 debugModeFlag = switch $ long "debug" <> short 'd' <> help "debug mode"
@@ -69,7 +73,9 @@ quickFixOpt = liftA2 Begin.QuickFix summaryOpt issueTypeOpt
 initOpts :: ParserInfo Options
 initOpts = info optsParser desc
   where
-    optsParser = pure Init <**> helper
+    optsParser       = Init <$> InitOptions <$> forceRebuildFlag <**> helper
+    forceRebuildFlag = switch $ long "force-rebuild" <> short 'f' <> help
+        "force rebuild from scratch"
     desc =
         fullDesc <> progDesc "Initializes your account as a reviewer" <> header
             "Initializes your account as a reviewer"
@@ -118,8 +124,8 @@ main :: IO ()
 main = do
     options <- execParser opts
     case options of
-        Init -> initializeApplication
-        _    -> return ()
+        Init forceRebuild -> initializeApplication forceRebuild
+        _                 -> return ()
     config <- configFromOptions options
     Reader.runReaderT (runProgram options) config
 
@@ -220,16 +226,18 @@ configFromOptions options = do
             , bugCategories  = bugCategories
             }
 
-initializeApplication :: IO ()
-initializeApplication = do
-    config <- getConfigFromPrompt
+initializeApplication :: Bool -> IO ()
+initializeApplication forceRebuild = do
+    config <- getConfigFromPrompt forceRebuild
     writePrivateInfo config
     writePublicInfo config
     putStrLn
         "Config files written. Please add .river.env.json to your gitignore - it contains your passwords."
 
-getConfigFromPrompt :: IO Config.Config
-getConfigFromPrompt = do
+data DataPathSuggestion = River String | RiverEnv String
+
+getConfigFromPrompt :: Bool -> IO Config.Config
+getConfigFromPrompt forceRebuild = do
     repoManager    <- getRepoManager
     projectManager <- getProjectManager
     workingBranch  <- getWorkingBranch
@@ -242,6 +250,18 @@ getConfigFromPrompt = do
         , bugCategories  = bugCategories
         }
   where
+    suggestedDataLocation suggestedPath queryAction = do
+        let fileName = case suggestedPath of
+                River    _ -> "river.json"
+                RiverEnv _ -> "river.env.json"
+
+        object <-
+            (A.eitherDecodeFileStrict' fileName :: IO (Either String A.Object))
+        getObject
+
+
+        AT.parseEither
+
     getRepoManager = do
         repoManager <- Logger.queryWithLimitedSuggestions'
             "Select your repo manager (tab for suggestions): "
