@@ -325,8 +325,8 @@ initializeApplication forceRebuild = do
 getConfigFromPrompt
     :: Bool -> Reader.ReaderT Config.LoggerContext IO Config.Config
 getConfigFromPrompt forceRebuild = do
-    let logger = "whatever"
-    files <- Reader.liftIO getConfigFiles
+    logger <- Config.getLoggerFromContext <$> Reader.ask
+    files  <- Reader.liftIO getConfigFiles
     let getField dataPathSuggestion promptForField = if forceRebuild
             then Reader.liftIO promptForField
             else getFieldFromConfigOrPrompt files
