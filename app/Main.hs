@@ -37,7 +37,8 @@ data MergeOptions = MergeOptions
   } deriving (Show)
 
 data InitOptions = InitOptions
-  { forceRebuild :: Bool
+  { useDebugLogger :: Bool
+  , forceRebuild :: Bool
   } deriving (Show)
 
 data Options
@@ -75,7 +76,8 @@ quickFixOpt = liftA2 Begin.QuickFix summaryOpt issueTypeOpt
 initOpts :: ParserInfo Options
 initOpts = info optsParser desc
   where
-    optsParser       = Init <$> InitOptions <$> forceRebuildFlag <**> helper
+    optsParser =
+        Init <$> liftA2 InitOptions debugModeFlag forceRebuildFlag <**> helper
     forceRebuildFlag = switch $ long "force-rebuild" <> short 'f' <> help
         "force rebuild from scratch"
     desc =
@@ -124,23 +126,29 @@ opts = info optsParser desc
 
 main :: IO ()
 main = do
-    options <- execParser opts
-    case options of
-        Init (InitOptions forceRebuild) -> initializeApplication forceRebuild
-        _                               -> return ()
-    configResult <- configFromOptions options
-    case configResult of
-        Left  errorMsg -> die errorMsg
-        Right config   -> Reader.runReaderT (runProgram options) config
+    execParser opts >>= runProgram
 
-runProgram :: Options -> Config.Program ()
+runProgram :: Options -> IO ()
 runProgram options = do
-    Git.setOrigin
     case options of
-        Begin  (BeginOptions { issueSource }) -> Begin.begin issueSource
-        Review _                              -> Review.review
-        Merge  _                              -> Merge.merge
-        Init   _                              -> return ()
+        Begin (BeginOptions { useDebugLogger, issueSource }) ->
+            runWithConfigContext useDebugLogger $ Begin.begin issueSource
+        Review (ReviewOptions { useDebugLogger }) ->
+            runWithConfigContext useDebugLogger $ Review.review
+        Merge (MergeOptions { useDebugLogger }) ->
+            runWithConfigContext useDebugLogger $ Merge.merge
+        Init (InitOptions { forceRebuild, useDebugLogger }) ->
+            runWithLoggerContext useDebugLogger
+                $ initializeApplication forceRebuild
+  where
+    runWithConfigContext useDebugLogger program = do
+        configResult <- readConfig useDebugLogger
+        case configResult of
+            Left errorMsg -> die errorMsg
+            Right config -> Reader.runReaderT (Git.setOrigin >> program) config
+    runWithLoggerContext useDebugLogger program = do
+        logger <- initializeLogger useDebugLogger
+        Reader.runReaderT program (Config.LoggerContext logger)
 
 dataSuggestion :: ConfigFile -> Text.Text -> DataPathSuggestion
 dataSuggestion configFile path =
@@ -220,14 +228,18 @@ getFieldFromConfig files dataPathSuggestion = do
     parseConfig files dataPathSuggestion
 
 getFieldFromConfigOrPrompt
-    :: (FromJSON a, Show a) => ConfigFiles -> DataPathSuggestion -> IO a -> IO a
+    :: (FromJSON a, Show a)
+    => ConfigFiles
+    -> DataPathSuggestion
+    -> IO a
+    -> Reader.ReaderT Config.LoggerContext IO a
 getFieldFromConfigOrPrompt files dataPathSuggestion promptForField = do
     case parseConfig files dataPathSuggestion of
         Left errorMsg -> do
-            Logger.logDebug' errorMsg
-            promptForField
+            Logger.logDebug errorMsg
+            Reader.liftIO promptForField
         Right fieldContent -> do
-            Logger.logDebug'
+            Logger.logDebug
                 $  "Data found at "
                 <> show (Text.intercalate "." (path dataPathSuggestion))
                 <> ": "
@@ -264,9 +276,9 @@ getRawFileContent fileName = do
     if fileExists then A.decodeFileStrict' fileName else return Nothing
 
 
-configFromOptions :: Options -> IO (Either String Config.Config)
-configFromOptions options = do
-    logger <- initializeLogger options
+readConfig :: Bool -> IO (Either String Config.Config)
+readConfig useDebugLogger = do
+    logger <- initializeLogger useDebugLogger
     files  <- getConfigFiles
     let getField dataPathSuggestion =
             getFieldFromConfig files dataPathSuggestion
@@ -303,19 +315,20 @@ configFromOptions options = do
         bugCategories <- getField bugCategoriesF
         return $ Config.Config {..}
 
-initializeApplication :: Bool -> IO ()
+initializeApplication :: Bool -> Reader.ReaderT Config.LoggerContext IO ()
 initializeApplication forceRebuild = do
     config <- getConfigFromPrompt forceRebuild
-    writeToConfigFiles config
-    putStrLn
+    Reader.liftIO $ writeToConfigFiles config
+    Logger.logNotice
         "Config files written. Please add .river.env.json to your gitignore - it contains your passwords."
 
-getConfigFromPrompt :: Bool -> IO Config.Config
+getConfigFromPrompt
+    :: Bool -> Reader.ReaderT Config.LoggerContext IO Config.Config
 getConfigFromPrompt forceRebuild = do
     let logger = "whatever"
-    files <- getConfigFiles
+    files <- Reader.liftIO getConfigFiles
     let getField dataPathSuggestion promptForField = if forceRebuild
-            then promptForField
+            then Reader.liftIO promptForField
             else getFieldFromConfigOrPrompt files
                                             dataPathSuggestion
                                             promptForField
@@ -507,7 +520,6 @@ writeToConfigFiles config = do
     getUsername (Config.BasicAuthCredentials username _) = username
     getPassword (Config.BasicAuthCredentials _ password) = password
 
-
 aesonPrettyConfig :: Pretty.Config
 aesonPrettyConfig = Pretty.Config
     { confIndent          = Pretty.Spaces 4
@@ -530,22 +542,8 @@ aesonPrettyConfig = Pretty.Config
     , confTrailingNewline = False
     }
 
-
-
-initializeLogger :: Options -> IO String
-initializeLogger options = do
-    updateGlobalLogger logger $ setLevel level
-    return logger
-  where
-    logger = case options of
-        Begin (BeginOptions { useDebugLogger }) ->
-            if useDebugLogger then "DebugLogger" else "BasicLogger"
-        Review (ReviewOptions { useDebugLogger }) ->
-            if useDebugLogger then "DebugLogger" else "BasicLogger"
-        Merge (MergeOptions { useDebugLogger }) ->
-            if useDebugLogger then "DebugLogger" else "BasicLogger"
-        Init _ -> "BasicLogger"
-    level = case logger of
-        "BasicLogger" -> NOTICE
-        "DebugLogger" -> DEBUG
-        _             -> NOTICE
+initializeLogger :: Bool -> IO String
+initializeLogger useDebugLogger = do
+    updateGlobalLogger "logger" $ setLevel loggerLevel
+    return "logger"
+    where loggerLevel = if useDebugLogger then DEBUG else NOTICE

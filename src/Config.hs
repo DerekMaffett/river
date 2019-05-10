@@ -7,8 +7,11 @@ module Config
     , BitbucketConfig(..)
     , GithubConfig(..)
     , BasicAuthCredentials(..)
+    , LoggerContext(..)
+    , ContainsLogger
     , ask
     , liftIO
+    , getLoggerFromContext
     )
 where
 
@@ -16,6 +19,13 @@ import qualified Types
 import qualified Control.Monad.Reader          as Reader
 import           GHC.Generics
 import           Data.Aeson
+
+class ContainsLogger a where
+  getLoggerFromContext :: a -> String
+
+data LoggerContext = LoggerContext String
+instance ContainsLogger LoggerContext where
+  getLoggerFromContext (LoggerContext logger) = logger
 
 type Program = Reader.ReaderT Config IO
 
@@ -66,3 +76,5 @@ data Config = Config
   , workingBranch :: String
   , bugCategories :: [String]
   }
+instance ContainsLogger Config where
+  getLoggerFromContext (Config { logger }) = logger

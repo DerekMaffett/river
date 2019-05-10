@@ -9,22 +9,19 @@ import           System.Console.Haskeline
 import           Data.List                      ( isPrefixOf )
 import qualified Control.Monad.Reader          as Reader
 
-logDebug' msg = do
-    putStrLn $ "DEBUG: " <> msg
-
-logDebug :: String -> Program ()
+logDebug :: (ContainsLogger a) => String -> Reader.ReaderT a IO ()
 logDebug msg = do
-    Config { logger } <- ask
+    logger <- getLoggerFromContext <$> Reader.ask
     Reader.liftIO $ debugM logger ("DEBUG: " <> msg)
 
-logNotice :: String -> Program ()
+logNotice :: (ContainsLogger a) => String -> Reader.ReaderT a IO ()
 logNotice msg = do
-    Config { logger } <- ask
+    logger <- getLoggerFromContext <$> Reader.ask
     Reader.liftIO $ noticeM logger msg
 
-logError :: String -> Program ()
+logError :: (ContainsLogger a) => String -> Reader.ReaderT a IO ()
 logError msg = do
-    Config { logger } <- ask
+    logger <- getLoggerFromContext <$> Reader.ask
     Reader.liftIO $ criticalM logger msg
     Reader.liftIO $ exitFailure
 
