@@ -25,6 +25,12 @@ logError msg = do
     Reader.liftIO $ criticalM logger msg
     Reader.liftIO $ exitFailure
 
+initializeLogger :: Bool -> IO String
+initializeLogger useDebugLogger = do
+    updateGlobalLogger "logger" $ setLevel loggerLevel
+    return "logger"
+    where loggerLevel = if useDebugLogger then DEBUG else NOTICE
+
 -----------------------------------
 
 query :: String -> Program String
