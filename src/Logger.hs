@@ -9,6 +9,8 @@ import           System.Console.Haskeline
 import           Data.List                      ( isPrefixOf )
 import qualified Control.Monad.Reader          as Reader
 
+logDebug' msg = do
+    putStrLn $ "DEBUG: " <> msg
 
 logDebug :: String -> Program ()
 logDebug msg = do

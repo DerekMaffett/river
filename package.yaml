@@ -46,6 +46,8 @@ library:
 
 default-extensions:
     - OverloadedStrings
+    - ExistentialQuantification
+    - RecordWildCards
     - NamedFieldPuns
     - DuplicateRecordFields
     - DeriveGeneric
