@@ -5,6 +5,7 @@ where
 
 import qualified Logger
 import qualified Api.Jira                      as Jira
+import qualified Api.Bitbucket                 as Bitbucket
 import qualified Types
 import qualified Utils
 import qualified Data.Text                     as T
@@ -13,6 +14,7 @@ import qualified Data.Aeson.Encode.Pretty      as Pretty
 import qualified Data.HashMap.Strict           as HM
 import qualified Data.ByteString.Lazy          as B
 import qualified Data.Aeson                    as A
+import           Control.Monad
 import qualified Control.Monad.Reader          as Reader
 
 
@@ -78,10 +80,8 @@ getConfigFromPrompt forceRebuild = do
                 auth <- getAuth Config.bitbucketUsernameF
                                 Config.bitbucketPasswordF
                                 "Bitbucket"
-                return $ Config.Bitbucket $ Config.BitbucketConfig
-                    { defaultReviewers = []
-                    , ..
-                    }
+                defaultReviewers <- getDefaultReviewers files auth
+                return $ Config.Bitbucket $ Config.BitbucketConfig {..}
             Config.GithubManager -> do
                 repoName <- getField Config.githubRepoNameF
                     $ Logger.query' "Repo name: "
@@ -123,6 +123,29 @@ getConfigFromPrompt forceRebuild = do
         getField Config.bugCategoriesF
             $ (words <$> Logger.query' "Bug categories (separate by spaces): ")
     return Config.Config {..}
+
+getDefaultReviewers
+    :: (Maybe A.Object, Maybe A.Object)
+    -> Config.BasicAuthCredentials
+    -> Reader.ReaderT Config.LoggerContext IO [Types.BitbucketUser]
+getDefaultReviewers files bitbucketAuth = do
+    currentReviewers <-
+        case Config.parseConfig files Config.bitbucketDefaultReviewersF of
+            Left errorMsg -> do
+                Logger.logDebug errorMsg
+                return []
+            Right reviewers -> return reviewers
+    currentUser <- Bitbucket.getSelf bitbucketAuth
+    if (currentUser `notElem` currentReviewers)
+        then do
+            shouldAddAsReviewer <- Logger.queryYesNo
+                "Would you like to add yourself as a default reviewer?"
+            if shouldAddAsReviewer
+                then return (currentUser : currentReviewers)
+                else return currentReviewers
+        else do
+            return currentReviewers
+
 
 getTransitionName :: Config.JiraConfig -> String -> IO String
 getTransitionName jiraConfig reasonForTransition = getTransitionName'

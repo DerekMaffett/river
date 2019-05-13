@@ -1,6 +1,7 @@
 module Api.Bitbucket
     ( createPullRequest
     , mergePullRequest
+    , getSelf
     )
 where
 
@@ -11,6 +12,7 @@ import           Data.Aeson
 import qualified Data.Text                     as T
 import qualified Data.Vector                   as V
 import           Control.Monad
+import qualified Control.Monad.Reader          as Reader
 import           GHC.Generics
 import           Debug.Trace
 import           Network.HTTP.Req
@@ -123,3 +125,9 @@ mergePullRequest (BitbucketConfig { defaultReviewers, repoName, repoOrg, auth })
 
 
 bitbucketQueryArg arg = "\"" <> T.pack arg <> "\""
+
+getSelf auth = do
+    res <- runReq def $ do
+        req GET (baseUrl /: "user") NoReqBody jsonResponse authOptions
+    return (responseBody res :: Types.BitbucketUser)
+    where authOptions = generateAuthOptions auth

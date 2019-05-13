@@ -51,6 +51,20 @@ query' question = runInputT defaultSettings $ do
         Nothing    -> return ""
         Just input -> return input
 
+queryYesNo :: String -> Reader.ReaderT a IO Bool
+queryYesNo question = Reader.liftIO go
+  where
+    go = runInputT defaultSettings $ do
+        maybeInput <- getInputLine (question <> " (y/n) ")
+        case maybeInput of
+            Nothing    -> return False
+            Just input -> case input of
+                "y" -> return True
+                "Y" -> return True
+                "n" -> return False
+                "N" -> return False
+                _   -> return False
+
 queryWithSuggestions :: String -> [String] -> Program String
 queryWithSuggestions question =
     Reader.liftIO <$> queryWithSuggestions' question
