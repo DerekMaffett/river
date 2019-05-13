@@ -29,13 +29,13 @@ getFieldFromConfigOrPrompt
     :: (A.FromJSON a, Show a)
     => (Maybe A.Object, Maybe A.Object)
     -> Config.DataPathSuggestion
-    -> IO a
+    -> Reader.ReaderT Config.LoggerContext IO a
     -> Reader.ReaderT Config.LoggerContext IO a
 getFieldFromConfigOrPrompt files dataPathSuggestion promptForField = do
     case Config.parseConfig files dataPathSuggestion of
         Left errorMsg -> do
             Logger.logDebug errorMsg
-            Reader.liftIO promptForField
+            promptForField
         Right fieldContent -> do
             Logger.logDebug
                 $  "Data found at "
@@ -50,15 +50,16 @@ getConfigFromPrompt forceRebuild = do
     logger <- Config.getLoggerFromContext <$> Reader.ask
     files  <- Reader.liftIO Config.getConfigFiles
     let getField dataPathSuggestion promptForField = if forceRebuild
-            then Reader.liftIO promptForField
+            then promptForField
             else getFieldFromConfigOrPrompt files
                                             dataPathSuggestion
                                             promptForField
     let getAuth usernameField passwordField label = do
             username <- getField usernameField
-                                 (Logger.query' $ label <> " username: ")
-            password <- getField passwordField
-                                 (Logger.query' $ label <> " password: ")
+                                 (Logger.query $ label <> " username: ")
+            password <- getField
+                passwordField
+                (Logger.queryMasked $ label <> " password: ")
             return $ Config.BasicAuthCredentials username password
     repoManager <- do
         repoManagerType <-
@@ -68,15 +69,16 @@ getConfigFromPrompt forceRebuild = do
                     "github"    -> Config.GithubManager
                     _           -> Config.BitbucketManager
                 )
-            <$> Logger.queryWithLimitedSuggestions'
+            <$> (Logger.queryWithLimitedSuggestions
                     "Select your repo manager (tab for suggestions): "
                     ["bitbucket", "github"]
+                )
         case repoManagerType of
             Config.BitbucketManager -> do
                 repoName <- getField Config.bitbucketRepoNameF
-                    $ Logger.query' "Repo name: "
+                    $ Logger.query "Repo name: "
                 repoOrg <- getField Config.bitbucketRepoOrgF
-                    $ Logger.query' "Repo org: "
+                    $ Logger.query "Repo org: "
                 auth <- getAuth Config.bitbucketUsernameF
                                 Config.bitbucketPasswordF
                                 "Bitbucket"
@@ -84,9 +86,9 @@ getConfigFromPrompt forceRebuild = do
                 return $ Config.Bitbucket $ Config.BitbucketConfig {..}
             Config.GithubManager -> do
                 repoName <- getField Config.githubRepoNameF
-                    $ Logger.query' "Repo name: "
+                    $ Logger.query "Repo name: "
                 repoOrg <- getField Config.githubRepoOrgF
-                    $ Logger.query' "Repo org: "
+                    $ Logger.query "Repo org: "
                 auth <- getAuth Config.githubUsernameF
                                 Config.githubPasswordF
                                 "Github"
@@ -95,15 +97,16 @@ getConfigFromPrompt forceRebuild = do
         projectManagerType <-
             getField Config.projectManagerTypeF
             $  Config.JiraManager
-            <$ Logger.queryWithLimitedSuggestions'
+            <$ (Logger.queryWithLimitedSuggestions
                    "Select your project manager (tab for suggestions): "
                    ["jira"]
+               )
         case projectManagerType of
             Config.JiraManager -> do
                 projectKey <- getField Config.jiraProjectKeyF
-                    $ Logger.query' "Jira project key: "
+                    $ Logger.query "Jira project key: "
                 domainName <- getField Config.jiraDomainNameF
-                    $ Logger.query' "Jira domain name: "
+                    $ Logger.query "Jira domain name: "
                 auth <- getAuth Config.jiraUsernameF Config.jiraPasswordF "Jira"
                 let partialJiraConfig = Config.JiraConfig {..}
                 onStart <- getField Config.jiraOnStartF
@@ -116,12 +119,11 @@ getConfigFromPrompt forceRebuild = do
                     $ getTransitionName partialJiraConfig "merging a PR"
                 return $ Config.Jira $ Config.JiraConfig {..}
     workingBranch <-
-        getField Config.workingBranchF $ Logger.queryWithSuggestions'
+        getField Config.workingBranchF $ Logger.queryWithSuggestions
             "Main git branch (tab for suggestions): "
             ["master", "develop"]
-    bugCategories <-
-        getField Config.bugCategoriesF
-            $ (words <$> Logger.query' "Bug categories (separate by spaces): ")
+    bugCategories <- getField Config.bugCategoriesF $ words <$> Logger.query
+        "Bug categories (separate by spaces): "
     return Config.Config {..}
 
 getDefaultReviewers
@@ -134,7 +136,10 @@ getDefaultReviewers files bitbucketAuth = do
             Left errorMsg -> do
                 Logger.logDebug errorMsg
                 return []
-            Right reviewers -> return reviewers
+            Right reviewers -> do
+                Logger.logDebug $ "Reviewers found: " <> show reviewers
+                return reviewers
+    Logger.logDebug "Looking up bitbucket profile..."
     currentUser <- Bitbucket.getSelf bitbucketAuth
     if (currentUser `notElem` currentReviewers)
         then do
@@ -147,22 +152,28 @@ getDefaultReviewers files bitbucketAuth = do
             return currentReviewers
 
 
-getTransitionName :: Config.JiraConfig -> String -> IO String
+getTransitionName
+    :: Config.JiraConfig
+    -> String
+    -> Reader.ReaderT Config.LoggerContext IO String
 getTransitionName jiraConfig reasonForTransition = getTransitionName'
     jiraConfig
-    Logger.queryWithLimitedSuggestions'
+    Logger.queryWithLimitedSuggestions
     reasonForTransition
     (  "Select correct transition for "
     <> reasonForTransition
     <> " (tab for suggestions): "
     )
 
-getOptionalTransitionName :: Config.JiraConfig -> String -> IO (Maybe String)
+getOptionalTransitionName
+    :: Config.JiraConfig
+    -> String
+    -> Reader.ReaderT Config.LoggerContext IO (Maybe String)
 getOptionalTransitionName jiraConfig reasonForTransition =
     (\label -> if label == "" then Nothing else Just label)
         <$> getTransitionName'
                 jiraConfig
-                Logger.queryWithSuggestions'
+                Logger.queryWithSuggestions
                 reasonForTransition
                 (  "Select correct transition for "
                 <> reasonForTransition
@@ -171,14 +182,14 @@ getOptionalTransitionName jiraConfig reasonForTransition =
 
 getTransitionName'
     :: Config.JiraConfig
-    -> (String -> [String] -> IO String)
+    -> (String -> [String] -> Reader.ReaderT Config.LoggerContext IO String)
     -> String
     -> String
-    -> IO String
+    -> Reader.ReaderT Config.LoggerContext IO String
 getTransitionName' jiraConfig queryFn reasonForTransition prompt = do
     issueKey <-
         (\issueNumber -> (Config.projectKey jiraConfig) <> "-" <> issueNumber)
-            <$> Logger.query'
+            <$> Logger.query
                     (  "Please provide an example task prior to "
                     <> reasonForTransition
                     <> ": "
@@ -188,7 +199,7 @@ getTransitionName' jiraConfig queryFn reasonForTransition prompt = do
     maybeIssue <- Jira.getIssue jiraConfig issueKey
     case maybeIssue of
         Nothing -> do
-            putStrLn $ "Issue " <> issueKey <> " not found"
+            Reader.liftIO $ (putStrLn $ "Issue " <> issueKey <> " not found")
             getTransitionName' jiraConfig queryFn reasonForTransition prompt
         Just issue -> do
             let transitionNames =

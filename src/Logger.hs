@@ -33,23 +33,21 @@ initializeLogger useDebugLogger = do
 
 -----------------------------------
 
-query :: String -> Program String
-query = Reader.liftIO <$> query'
-
-queryMasked' :: String -> IO String
-queryMasked' question = runInputT defaultSettings $ do
+queryMasked :: String -> Reader.ReaderT a IO String
+queryMasked question = runInputT defaultSettings $ do
     maybeInput <- getPassword (Just '*') question
     case maybeInput of
         Nothing    -> return ""
         Just input -> return input
 
 
-query' :: String -> IO String
-query' question = runInputT defaultSettings $ do
-    maybeInput <- getInputLine question
-    case maybeInput of
-        Nothing    -> return ""
-        Just input -> return input
+query :: String -> Reader.ReaderT a IO String
+query question = do
+    runInputT defaultSettings $ do
+        maybeInput <- getInputLine question
+        case maybeInput of
+            Nothing    -> return ""
+            Just input -> return input
 
 queryYesNo :: String -> Reader.ReaderT a IO Bool
 queryYesNo question = Reader.liftIO go
@@ -65,12 +63,8 @@ queryYesNo question = Reader.liftIO go
                 "N" -> return False
                 _   -> return False
 
-queryWithSuggestions :: String -> [String] -> Program String
-queryWithSuggestions question =
-    Reader.liftIO <$> queryWithSuggestions' question
-
-queryWithSuggestions' :: String -> [String] -> IO String
-queryWithSuggestions' question wordList =
+queryWithSuggestions :: String -> [String] -> Reader.ReaderT a IO String
+queryWithSuggestions question wordList = do
     runInputT (setComplete completionFn defaultSettings) $ do
         maybeInput <- getInputLine question
         case maybeInput of
@@ -80,14 +74,17 @@ queryWithSuggestions' question wordList =
     searchFn str = simpleCompletion <$> filter (str `isPrefixOf`) wordList
     completionFn = completeWord Nothing "\t" $ return . searchFn
 
-queryWithLimitedSuggestions' :: String -> [String] -> IO String
-queryWithLimitedSuggestions' question wordList = do
-    answer <- queryWithSuggestions' question wordList
+
+queryWithLimitedSuggestions :: String -> [String] -> Reader.ReaderT a IO String
+queryWithLimitedSuggestions question wordList = do
+    answer <- queryWithSuggestions question wordList
     if answer `elem` wordList
         then return answer
         else do
-            putStrLn
+            Reader.liftIO
+                (  putStrLn
                 $  answer
                 <> " is not a valid choice. Valid choices: "
                 <> show wordList
-            queryWithLimitedSuggestions' question wordList
+                )
+            queryWithLimitedSuggestions question wordList
