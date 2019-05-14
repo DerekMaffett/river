@@ -139,8 +139,9 @@ getDefaultReviewers files bitbucketAuth = do
             Right reviewers -> do
                 Logger.logDebug $ "Reviewers found: " <> show reviewers
                 return reviewers
-    Logger.logDebug "Looking up bitbucket profile..."
-    currentUser <- Bitbucket.getSelf bitbucketAuth
+    currentUser <- Logger.catchWithLog
+        "Failed to get your Bitbucket account"
+        (Bitbucket.getSelf bitbucketAuth)
     if (currentUser `notElem` currentReviewers)
         then do
             shouldAddAsReviewer <- Logger.queryYesNo
@@ -199,7 +200,7 @@ getTransitionName' jiraConfig queryFn reasonForTransition prompt = do
     maybeIssue <- Jira.getIssue jiraConfig issueKey
     case maybeIssue of
         Nothing -> do
-            Reader.liftIO $ (putStrLn $ "Issue " <> issueKey <> " not found")
+            Logger.logNotice $ "Issue " <> issueKey <> " not found"
             getTransitionName' jiraConfig queryFn reasonForTransition prompt
         Just issue -> do
             let transitionNames =

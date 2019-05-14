@@ -39,6 +39,7 @@ dependencies:
     - parsec
     - haskeline
     - graphql
+    - safe-exceptions
 
 library:
     source-dirs:

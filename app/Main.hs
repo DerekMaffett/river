@@ -9,6 +9,7 @@ import qualified Types
 import qualified Git
 import qualified Logger
 import qualified Control.Monad.Reader          as Reader
+import           Control.Exception.Safe
 import           Options.Applicative
 import           System.Exit
 
@@ -114,7 +115,7 @@ opts = info optsParser desc
 
 main :: IO ()
 main = do
-    execParser opts >>= runProgram
+    catchAny (execParser opts >>= runProgram) (putStrLn <$> displayException)
 
 runProgram :: Options -> IO ()
 runProgram options = do

@@ -7,6 +7,7 @@ import           System.Log.Logger
 import           System.IO
 import           System.Console.Haskeline
 import           Data.List                      ( isPrefixOf )
+import           Control.Exception.Safe
 import qualified Control.Monad.Reader          as Reader
 
 logDebug :: (ContainsLogger a) => String -> Reader.ReaderT a IO ()
@@ -19,11 +20,18 @@ logNotice msg = do
     logger <- getLoggerFromContext <$> Reader.ask
     Reader.liftIO $ noticeM logger msg
 
-logError :: (ContainsLogger a) => String -> Reader.ReaderT a IO ()
+logError :: (ContainsLogger a) => String -> Reader.ReaderT a IO b
 logError msg = do
     logger <- getLoggerFromContext <$> Reader.ask
     Reader.liftIO $ criticalM logger msg
     Reader.liftIO $ exitFailure
+
+catchWithLog msg thingThatMightBreak = catchAny
+    thingThatMightBreak
+    (\err -> do
+        logNotice $ "\n" <> msg
+        logError $ displayException err
+    )
 
 initializeLogger :: Bool -> IO String
 initializeLogger useDebugLogger = do
