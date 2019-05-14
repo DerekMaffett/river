@@ -34,20 +34,24 @@ closeIssue issue = do
     case projectManager of
         Jira settings -> do
             L.logNotice "Setting JIRA issue to Done..."
-            Jira.transitionIssue (Config.onMerge settings) settings issue
+            L.catchWithLog
+                "Failed to transition Jira issue"
+                (Jira.transitionIssue (Config.onMerge settings) settings issue)
 
 
 mergePullRequest branchName = do
     Config { repoManager } <- ask
     L.logNotice "Merging pull request..."
     case repoManager of
-        Bitbucket settings -> Bitbucket.mergePullRequest settings branchName
-        Github    settings -> Github.mergePullRequest settings branchName
+        Bitbucket settings -> L.catchWithLog
+            "Failed to merge pull request"
+            (Bitbucket.mergePullRequest settings branchName)
+        Github settings -> L.catchWithLog
+            "Failed to merge pull request"
+            (Github.mergePullRequest settings branchName)
     L.logNotice "Merge successful"
 
 
 getIssueKey branchName = case Git.getIssueKeyFromBranch branchName of
-    Left _ -> do
-        L.logError "Could not infer issue key from branch name"
-        return "" -- Type matching... failing the program imperatively is wonky
+    Left  _        -> L.logError "Could not infer issue key from branch name"
     Right issueKey -> return issueKey

@@ -40,7 +40,9 @@ setIssueToCodeReview issue = do
                 Nothing              -> return ()
                 Just transitionLabel -> do
                     L.logNotice "Setting JIRA issue to Code Review..."
-                    Jira.transitionIssue transitionLabel settings issue
+                    L.catchWithLog
+                        "Failed to transition Jira issue"
+                        (Jira.transitionIssue transitionLabel settings issue)
 
 
 openPullRequest issue branchName = do
@@ -48,10 +50,14 @@ openPullRequest issue branchName = do
     L.logNotice "Creating pull request..."
     case repoManager of
         Bitbucket settings -> do
-            link <- Bitbucket.createPullRequest settings issue branchName
+            link <- L.catchWithLog
+                "Failed to create pull request"
+                (Bitbucket.createPullRequest settings issue branchName)
             L.logNotice $ "\nBitbucket link:\n" <> link
         Github settings -> do
-            link <- Github.createPullRequest settings issue branchName
+            link <- L.catchWithLog
+                "Failed to create pull request"
+                (Github.createPullRequest settings issue branchName)
             L.logNotice $ "\nGithub link:\n" <> link
 
 getIssueKey branchName = case Git.getIssueKeyFromBranch branchName of

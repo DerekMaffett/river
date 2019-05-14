@@ -25,7 +25,9 @@ begin issueSource = do
                 _begin jiraSettings issueKey
             QuickFix summary issueType -> do
                 L.logNotice "Creating issue..."
-                issueKey <- Jira.createIssue jiraSettings summary issueType
+                issueKey <- L.catchWithLog
+                    "Failed to create jira issue"
+                    (Jira.createIssue jiraSettings summary issueType)
                 L.logNotice $ "Created issue: " <> issueKey
                 _begin jiraSettings issueKey
 
@@ -40,9 +42,12 @@ _begin settings issueKey = do
             L.logNotice $ getIssueSummary issue
             Git.openBranch =<< getBranchName issue
             L.logNotice "Setting JIRA issue to In Progress..."
-            Jira.transitionIssue (Config.onStart settings) settings issue
+            L.catchWithLog
+                "Failed to transition Jira issue"
+                (Jira.transitionIssue (Config.onStart settings) settings issue)
             L.logNotice "Assigning JIRA issue to you..."
-            Jira.assignIssue settings $ Types.key issue
+            L.catchWithLog "Failed to assign Jira issue to you"
+                           (Jira.assignIssue settings $ Types.key issue)
 
 
 getBranchName :: Types.Issue -> Program String
