@@ -3,10 +3,16 @@ import qualified Git
 import           Data.GraphQL.AST
 import           Data.GraphQL.Encoder
 import           Data.Either
+import           Data.Maybe
 import           Data.Text                     as T
 import qualified Data.HashMap.Strict           as HM
 import           Data.Aeson
+import qualified Data.ByteString.Lazy.Char8    as B
 import           Utils
+import           System.Process.Typed
+import           System.IO
+import           Control.Monad
+import           Control.Exception.Safe
 
 main = hspec spec
 
@@ -14,8 +20,72 @@ shouldBeObject object (Object expectedObject) = shouldBe object expectedObject
 testSetAtPath pathSegments (Object object) content =
     setAtPath pathSegments object content
 
+getCurrentContents handle = getCurrentContentsWithAccum ""
+  where
+    getCurrentContentsWithAccum accum = do
+        hasMoreContent <- hReady handle
+        if hasMoreContent
+            then do
+                char <- hGetChar handle
+                getCurrentContentsWithAccum $ accum <> [char]
+            else do
+                return accum
+
+hHasPrompt process expectedText = do
+    maybeExitCode <- getExitCode process
+    case maybeExitCode of
+        Just exitCode -> do
+            hWaitForInput (getStdout process) 1000
+            content <- getCurrentContents (getStdout process)
+            putStr content
+            shouldSatisfy (T.pack content) (T.isInfixOf expectedText)
+        Nothing -> expectationFailure "failed"
+
+hInput inHandle text = do
+    hPutStrLn inHandle text
+    putStrLn text
+    hFlush inHandle
+
 spec :: Spec
 spec = do
+    describe "Main" $ do
+        describe "Init" $ do
+            it "should initialize the configuration files" $ do
+                let config =
+                        setStdin createPipe $ setStdout createPipe $ setStderr
+                            closed
+                            "river init"
+
+                p <- startProcess config
+                let inHandle  = getStdin p
+                let hasPrompt = hHasPrompt p
+                let input     = hInput inHandle
+                hasPrompt "Select your repo manager (tab for suggestions): "
+                input "invalid-manager"
+                hasPrompt "invalid-manager is not a valid choice"
+                input "bitbucket"
+                hasPrompt "Repo name"
+                input "river"
+                hasPrompt "Repo org"
+                input "DerekMaffett"
+                hasPrompt "Bitbucket username"
+                input "derekmaffett-orm"
+                hasPrompt "Bitbucket password"
+                input ""
+                hasPrompt
+                    "Would you like to add yourself as a default reviewer?"
+                handle
+                        (\(ExitCodeException _ _ _ stderr) -> do
+                            throwString (B.unpack stderr)
+                        )
+                    $ checkExitCode p
+
+
+
+
+
+
+
     describe "Git" $ do
         describe "getIssueKeyFromBranch" $ do
             it "should extract an issue key from the branch name" $ do
