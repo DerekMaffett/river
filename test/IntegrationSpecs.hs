@@ -65,6 +65,3 @@ spec = describe "Integration Specs" $ do
                         throwString (B.unpack stderr)
                     )
                 $ checkExitCode p
-
-
-
