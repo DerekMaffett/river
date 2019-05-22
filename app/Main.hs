@@ -6,7 +6,6 @@ import qualified Merge
 import qualified Init
 import qualified Config
 import qualified Types
-import qualified Git
 import qualified Logger
 import qualified Control.Monad.Reader          as Reader
 import           Control.Exception.Safe
@@ -134,8 +133,8 @@ runProgram options = do
         logger       <- Logger.initializeLogger useDebugLogger
         configResult <- Config.readConfig logger
         case configResult of
-            Left errorMsg -> die errorMsg
-            Right config -> Reader.runReaderT (Git.setOrigin >> program) config
+            Left  errorMsg -> die errorMsg
+            Right config   -> Reader.runReaderT program config
     runWithLoggerContext useDebugLogger program = do
         logger <- Logger.initializeLogger useDebugLogger
         Reader.runReaderT program (Config.LoggerContext logger)

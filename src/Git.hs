@@ -1,6 +1,5 @@
 module Git
     ( openBranch
-    , setOrigin
     , getCurrentBranch
     , getIssueKeyFromBranch
     )
@@ -14,26 +13,9 @@ import           Text.Parsec
 import           Control.Monad
 
 
-setOrigin :: Program ()
-setOrigin = do
-    originExists <- includesOrigin <$> runProcess "git remote"
-    when originExists $ runProcess' "git remote remove river-origin"
-    originAddress <- getOrigin
-    runProcess' $ "git remote add river-origin " <> originAddress
-    where includesOrigin = elem "river-origin" . lines
-
-
-getOrigin = do
-    Config { repoManager } <- ask
-    return $ case repoManager of
-        Bitbucket (BitbucketConfig { repoName, repoOrg }) ->
-            "git@bitbucket.org:" <> repoOrg <> "/" <> repoName <> ".git"
-        Github (GithubConfig { repoName, repoOrg }) ->
-            "git@github.com:" <> repoOrg <> "/" <> repoName <> ".git"
-
 openBranch :: String -> Program ()
 openBranch branchName = do
-    Config { workingBranch } <- ask
+    Config { workingBranch, remoteOrigin } <- ask
     L.logNotice $ "Checking out " <> workingBranch <> "..."
     runProcess' $ "git checkout " <> workingBranch
     L.logNotice $ "Pulling new changes on " <> workingBranch <> "..."
@@ -41,7 +23,7 @@ openBranch branchName = do
     L.logNotice "Creating branch..."
     runProcess' $ "git checkout -b " <> branchName
     L.logNotice "Pushing branch to remote..."
-    runProcess' $ "git push -u river-origin " <> branchName
+    runProcess' $ "git push -u " <> remoteOrigin <> " " <> branchName
 
 getCurrentBranch :: Program String
 getCurrentBranch = trim <$> runProcess "git rev-parse --abbrev-ref HEAD"

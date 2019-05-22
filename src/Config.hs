@@ -63,6 +63,7 @@ data Config = Config
   , projectManager :: ProjectManager
   , repoManager :: RepoManager
   , workingBranch :: String
+  , remoteOrigin :: String
   , bugCategories :: [String]
   }
 instance ContainsLogger Config where
@@ -137,6 +138,8 @@ jiraPasswordF = dataSuggestion RiverEnv "jira.password"
 
 workingBranchF :: DataPathSuggestion
 workingBranchF = dataSuggestion River "workingBranch"
+remoteOriginNameF :: DataPathSuggestion
+remoteOriginNameF = dataSuggestion RiverEnv "remoteOrigin"
 bugCategoriesF :: DataPathSuggestion
 bugCategoriesF = dataSuggestion River "bugCategories"
 
@@ -209,5 +212,6 @@ readConfig logger = do
                 auth         <- getAuth jiraUsernameF jiraPasswordF
                 return $ Jira $ JiraConfig {..}
         workingBranch <- getField workingBranchF
+        remoteOrigin  <- getField remoteOriginNameF
         bugCategories <- getField bugCategoriesF
         return $ Config {..}

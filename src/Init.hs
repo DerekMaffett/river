@@ -122,6 +122,10 @@ getConfigFromPrompt forceRebuild = do
         getField Config.workingBranchF $ Logger.queryWithSuggestions
             "Main git branch (tab for suggestions): "
             ["master", "develop"]
+    remoteOrigin <-
+        getField Config.remoteOriginNameF $ Logger.queryWithSuggestions
+            "Remote origin name (suggestion: \"origin\"): "
+            ["origin"]
     bugCategories <- getField Config.bugCategoriesF $ words <$> Logger.query
         "Bug categories (separate by spaces): "
     return Config.Config {..}
