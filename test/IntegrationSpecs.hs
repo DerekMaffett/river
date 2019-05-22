@@ -5,6 +5,7 @@ import qualified Data.ByteString.Lazy.Char8    as B
 import           Data.Maybe                     ( fromJust )
 import           System.Process.Typed
 import           System.IO
+import qualified System.Directory              as Dir
 import           GHC.Generics
 import           Control.Monad
 import           Control.Exception.Safe
@@ -12,7 +13,7 @@ import           Data.Aeson                    as A
 import           Data.Text                     as T
 
 
-getContentsUntil expectationFn maxWait h = do
+getContentsUntil expectationFn maxWait h eh = do
     runWithAccum ""
   where
     runWithAccum accum = do
@@ -40,22 +41,19 @@ getContentsUntil expectationFn maxWait h = do
 
 
 hHasPrompt process expectedText = do
-    maybeExitCode <- getExitCode process
-    case maybeExitCode of
-        Nothing -> do
-            content <- getContentsUntil expectedTextIsPresent
-                                        2000
-                                        (getStdout process)
-            putStr content
-            shouldSatisfy (T.pack content) expectedTextIsPresent
-        Just exitCode -> do
-            expectationFailure "failed"
+    content <- getContentsUntil expectedTextIsPresent
+                                2000
+                                (getStdout process)
+                                (getStderr process)
+    putStr content
+    shouldSatisfy (T.pack content) expectedTextIsPresent
     where expectedTextIsPresent = T.isInfixOf expectedText
 
-hInput inHandle text = do
+hInput process text = do
     hPutStrLn inHandle text
     putStrLn text
     hFlush inHandle
+    where inHandle = getStdin process
 
 data BitbucketJiraAuth = BitbucketJiraAuth
   { bitbucketUsername :: String
@@ -64,31 +62,48 @@ data BitbucketJiraAuth = BitbucketJiraAuth
   , jiraPassword :: String
   } deriving (Generic, A.FromJSON)
 
+bitbucketJiraFlow authInfo =
+    [ ("Select your repo manager"             , "invalid-manager")
+    , ("invalid-manager is not a valid choice", "bitbucket")
+    , ("Repo name"                            , "river")
+    , ("Repo org"                             , "DerekMaffett")
+    , ("Bitbucket username"                   , bitbucketUsername authInfo)
+    , ("Bitbucket password"                   , bitbucketPassword authInfo)
+    , ("Would you like to add yourself as a default reviewer?", "y")
+    , ("Select your project manager"          , "invalid-manager")
+    , ("invalid-manager is not a valid choice", "jira")
+    , ("Jira project key"                     , "TEST")
+    , ("Jira domain name"                     , "bitbucket-river-test")
+    , ("Jira username"                        , jiraUsername authInfo)
+    , ("Jira password"                        , jiraPassword authInfo)
+    , ("example task prior to starting"       , "1")
+    , ("Select correct transition for starting a task", "In Progress")
+    , ("example task prior to starting a PR"  , "2")
+    , ("Select correct transition for starting a PR", "Code Review")
+    , ("example task prior to merging a PR"   , "3")
+    , ("Select correct transition for merging a PR", "Done")
+    , ("Main git branch"                      , "master")
+    , ("Remote origin name"                   , "origin")
+    , ("Bug categories"                       , "type-error gremlins")
+    ]
+
+createInteraction p (prompt, response) = do
+    hHasPrompt p prompt
+    hInput p response
+
 spec = describe "Integration Specs" $ do
     describe "Init" $ do
         it "should initialize the configuration files" $ do
+            Dir.removePathForcibly ".river.env.json"
+            Dir.removePathForcibly ".river.json"
             authInfo <-
-                fromJust <$> (A.decodeFileStrict' ".integration-test-auth.json") :: IO
-                    (Maybe BitbucketJiraAuth)
+                fromJust
+                    <$> (A.decodeFileStrict' ".integration-test-auth.json" :: IO
+                              (Maybe BitbucketJiraAuth)
+                        )
             let config = setStdin createPipe $ setStdout createPipe $ setStderr
                     createPipe
                     "river init"
             p <- startProcess config
-            let inHandle  = getStdin p
-            let hasPrompt = hHasPrompt p
-            let input     = hInput inHandle
-            hasPrompt "Select your repo manager (tab for suggestions): "
-            input "invalid-manager"
-            hasPrompt "invalid-manager is not a valid choice"
-            input "bitbucket"
-            hasPrompt "Repo name"
-            input "river"
-            hasPrompt "Repo org"
-            input "DerekMaffett"
-            hasPrompt "Bitbucket username"
-            input "der"
-            hasPrompt "Bitbucket password"
-            input "jkjk"
-            hasPrompt "Would you like to add yourself as a default reviewer?"
-            stopProcess p
+            mapM_ (createInteraction p) (bitbucketJiraFlow authInfo)
             checkExitCode p

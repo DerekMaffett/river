@@ -282,6 +282,7 @@ writeToConfigFiles config = do
         ]
     baseFields =
         [ field Config.workingBranchF $ Config.workingBranch config
+        , field Config.remoteOriginNameF $ Config.remoteOrigin config
         , field Config.bugCategoriesF $ Config.bugCategories config
         ]
     getUsername (Config.BasicAuthCredentials username _) = username
