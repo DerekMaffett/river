@@ -4,3 +4,4 @@ river.cabal
 .river.json
 *~
 .env
+.integration-test-auth.json

@@ -2,7 +2,6 @@ module Config where
 
 import qualified Types
 import qualified Control.Monad.Reader          as Reader
-import           GHC.Generics
 import           Control.Monad
 import qualified Data.Text                     as T
 import           Data.Aeson                    as A
