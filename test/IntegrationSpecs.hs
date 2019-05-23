@@ -65,7 +65,7 @@ data BitbucketJiraAuth = BitbucketJiraAuth
 bitbucketJiraFlow authInfo =
     [ ("Select your repo manager"             , "invalid-manager")
     , ("invalid-manager is not a valid choice", "bitbucket")
-    , ("Repo name"                            , "river")
+    , ("Repo name"                            , "river-bitbucket")
     , ("Repo org"                             , "DerekMaffett")
     , ("Bitbucket username"                   , bitbucketUsername authInfo)
     , ("Bitbucket password"                   , bitbucketPassword authInfo)
@@ -101,9 +101,19 @@ spec = describe "Integration Specs" $ do
                     <$> (A.decodeFileStrict' ".integration-test-auth.json" :: IO
                               (Maybe BitbucketJiraAuth)
                         )
-            let config = setStdin createPipe $ setStdout createPipe $ setStderr
-                    createPipe
-                    "river init"
-            p <- startProcess config
+            p <- runCommand "river init"
             mapM_ (createInteraction p) (bitbucketJiraFlow authInfo)
             checkExitCode p
+
+            p <- runCommand "river begin -q \"TEST ISSUE\""
+            hHasPrompt p "Input branch name: feature/TEST-"
+            hInput p "test-branch"
+            hHasPrompt p "jkjk"
+            checkExitCode p
+  where
+    runCommand command = do
+        let
+            config = setStdin createPipe $ setStdout createPipe $ setStderr
+                inherit
+                command
+        startProcess config
