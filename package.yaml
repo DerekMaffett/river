@@ -67,6 +67,18 @@ executables:
         dependencies:
             - river
 
+    river-integration-tests:
+        main: IntegrationSpecs.hs
+        source-dirs: integration-tests
+        ghc-options:
+            - -threaded
+            - -rtsopts
+            - -with-rtsopts=-N
+        dependencies:
+            - river
+            - hspec
+            - QuickCheck
+
 tests:
     river-test:
         main: Spec.hs
@@ -79,3 +91,4 @@ tests:
             - river
             - hspec
             - QuickCheck
+
