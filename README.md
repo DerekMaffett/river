@@ -8,70 +8,56 @@ development practices.
 
 ## Development Roadmap
 
-For pragmatic reasons, development requires real-life applications in order to meaningfully make progress. Current
-support favors a Git/Bitbucket/Jira workflow, but Github and alternative ticket management tools should be supported
-ultimately. Configuration options are expected to increase over time to support these different options, and possibly
+For pragmatic reasons, development requires real-life applications in order to meaningfully make progress.
+Configuration options are expected to increase over time to support different options, and possibly
 allow different tools to be managed as custom plugins. [Trunk based development][tbd] will be the initial workflow supported,
 with Git Flow being the most likely next workflow to be added. However, existing use cases will tend to be preferred over
-abstract ones. 
+abstract ones.
+
+Currently managed tools:
+
+1. Version control and branch management - Git
+2. Project management - Jira
+3. Repository management - Github, Bitbucket
+4. Bug tracking - Internal tooling
 
 ## How to Install
 
-1. Add a `.river.env.json` file to the root of your project with the necessary personal
-   information (details below). This _should not_ be stored in git.
-2. Add a `.river.json` file as shown below. This is project-specific configuration
-   and _should_ be added to to git control.
-3. Clone this repository locally.
-4. Add `river/bin` to your `PATH` to use globally.
+1. Clone this repository locally.
+2. Add `river/bin` to your `PATH` to use globally.
+3. Run `river init` on the root of your project. That's it. The program will check what information is available, what's missing, ask you for
+   any required data, and write a properly formatted config file which you can modify as desired. This tool is also meant to serve
+   as a seamless upgrade tool in case of breaking version changes. There is also an example
+   configuration which can be used to see what the final file should look like.
 
-Example .river.env.json file. App passwords and api tokens are generated in the settings of your
-Jira and Bitbucket accounts. Bitbucket will require _Account:read_ and _PullRequests:read,write_ access.
+`.river.env.json` is where your private or personal settings for the project are stored. This _should not_ be stored
+in your git history. `river init` will attempt to add the file to your root `.gitignore` file but please ensure it is since
+it will include your credentials for things like Jira and Bitbucket.
 
-```
-{
-    "bitbucketUsername": "MyName",
-    "bitbucketPassword": "{BITBUCKET_APP_PASSWORD}",
-    "jiraEmail": "{JIRA_EMAIL}",
-    "jiraToken": "{JIRA_API_TOKEN}"
-}
+`.river.json` contains project-level settings and should be committed.
 
-```
+## On Passwords
 
-Example .river.json file. Do not populate `defaultReviewers` manually, use `river init` (details below):
-
-```
-{
-    "repoName": "{REPO_NAME}",
-    "defaultReviewers": [],
-    "workingBranch": "master",
-    "projectKey": "{JIRA_KEY}"
-}
-
-```
+App passwords and api tokens are generated in the settings of your
+Jira/Github/Bitbucket/etc accounts. Bitbucket will require _Account:read_ and _PullRequests:read,write_ access.
 
 ## Usage
 
 ### river -h
 
-Use the help file for details about use.
+Use the help file for details about use. This should be your first stop for details
+about things like command line flags.
 
 ### river init
 
-Assuming you've set up your credentials, `river init` adds you as a default reviewer for the repo. New
-privacy rules on Atlassian means this must be done by individual users on an opt-in basis, but this automates
-the process.
+`river init` will ask you for configuration information and query the API's of
+associated tools to gather more complicated details like user ids and Jira transition names
+behind the scenes.
 
 ### river begin
 
-`river begin` takes a jira ticket key and starts it, setting up a normalized
-branch name of your choosing.
-
-Procedure:
-
-1. Branches off of a freshly pulled working branch as specified in `.river` config.
-2. Syncs new branch with `remote origin`
-3. Sets Jira issue to "In Progress"
-4. Assigns Jira issue to you
+`river begin` takes a jira ticket key, sets a normalized branch name,
+assigns the task to you, and moves the ticket as specified.
 
 Basic example: `river begin -k DSP-3723`
 Quick-fix examples:
@@ -81,7 +67,26 @@ Quick-fix examples:
 
 ### river pr
 
-`river pr` takes your current branch, starts a PR, and sets your Jira ticket to Code review,
-pinging all default reviewers.
+`river pr` takes your current branch, starts a PR with all configured reviewers,
+and moves your Jira ticket as specified.
+
+### river merge
+
+`river merge` takes your current branch, merges the associated PR, and moves your Jira ticket as requested.
+
+## Regarding Problems and Things
+
+1. It's impossible to support everyone's flows or tools, and this isn't meant to be
+   infinitely configurable. But it is meant to be _generally_ applicable, work for most teams,
+   and encourage best practices. If you feel a relevant option is missing, please make an
+   issue on Github. While I may not be able to promise it will be implemented, I do promise
+   I'll address it :)
+2. Documentation is really useful. Documentation is also hard to keep up to date and completely accurate, especially
+   in relation to a project which tries to streamline processes with the Atlassian ecosystem and beyond.
+   For the sake of my sanity, the priority tools for documentation are `river init`, the command-line help documentation,
+   and the autogenerated examples folder. These should always be accurate, up-to-date, and sufficient. If
+   they are not, please let me know.
+3. A debug flag (`-d`) is available for all actions. While it is not meant for external users, it would
+   be useful information to add if you have an issue to raise.
 
 [tbd]: https://trunkbaseddevelopment.com/
