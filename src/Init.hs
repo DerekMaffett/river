@@ -14,16 +14,37 @@ import qualified Data.Aeson.Encode.Pretty      as Pretty
 import qualified Data.HashMap.Strict           as HM
 import qualified Data.ByteString.Lazy          as B
 import qualified Data.Aeson                    as A
+import qualified System.IO                     as System
+import qualified System.Directory              as Dir
 import           Control.Monad
 import qualified Control.Monad.Reader          as Reader
-
 
 initializeApplication :: Bool -> Reader.ReaderT Config.LoggerContext IO ()
 initializeApplication forceRebuild = do
     config <- getConfigFromPrompt forceRebuild
     Reader.liftIO $ writeToConfigFiles config
-    Logger.logNotice
-        "Config files written. Please add .river.env.json to your gitignore - it contains your passwords."
+    addEnvFileToGitignore
+    Logger.logNotice "Config files written"
+
+
+addEnvFileToGitignore :: Reader.ReaderT Config.LoggerContext IO ()
+addEnvFileToGitignore = do
+    gitignoreExists <- Reader.liftIO $ Dir.doesFileExist gitignoreFilePath
+    if gitignoreExists
+        then Reader.liftIO $ do
+            ignoredGlobs <- lines <$> System.readFile gitignoreFilePath
+            if riverEnvFilePath `notElem` ignoredGlobs
+                then System.appendFile gitignoreFilePath
+                                       ("\n" <> riverEnvFilePath)
+                else return ()
+        else do
+            Logger.logNotice
+                ".gitignore file not found. Please add .river.env.json to your gitignore - it contains your passwords."
+  where
+    riverEnvFilePath  = ".river.env.json"
+    gitignoreFilePath = ".gitignore"
+
+
 
 getFieldFromConfigOrPrompt
     :: (A.FromJSON a, Show a)
