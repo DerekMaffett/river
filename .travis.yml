@@ -1,25 +1,13 @@
-# This is the simple Travis configuration, which is intended for use
-# on applications which do not require cross-platform and
-# multiple-GHC-version support. For more information and other
-# options, see:
-#
-# https://docs.haskellstack.org/en/stable/travis_ci/
-#
-# Copy these contents into the root directory of your Github project in a file
-# named .travis.yml
-
-# Choose a build environment
-dist: xenial
-
-# Do not choose a language; we provide our own build tools.
 language: generic
 
-# Caching so the next build will be fast too.
 cache:
     directories:
         - $HOME/.stack
 
-# Ensure necessary system libraries are present
+os:
+    - osx
+    - linux
+
 addons:
     apt:
         packages:
@@ -36,5 +24,4 @@ install:
     - stack --no-terminal --install-ghc test --only-dependencies
 
 script:
-    # Build the package, its tests, and its docs and run the tests
-    - stack --no-terminal test --haddock --no-haddock-deps
+    - stack --no-terminal test --no-haddock-deps
