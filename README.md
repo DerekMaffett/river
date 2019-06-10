@@ -21,6 +21,9 @@ Currently managed tools:
 3. Repository management - Github, Bitbucket
 4. Bug tracking - Internal tooling
 
+Note: Binaries available currently for OSX only. Linux binaries available through compilation using Stack. Binaries will 
+be directly available for both platforms soon. 
+
 ## How to Install
 
 1. Clone this repository locally.
