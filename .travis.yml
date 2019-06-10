@@ -21,15 +21,16 @@ install:
 script:
     - stack --no-terminal test --local-bin-path ./bin --no-haddock-deps
 before_deploy:
-    - if [ $TRAVIS_OS_NAME = linux ]; then mv ./bin/river ./river-linux; else mv ./bin/river ./river-osx; fi
+    - if [ $TRAVIS_OS_NAME = linux ]; then mv ./bin/river ./river-linux; else mv ./bin/river
+      ./river-osx; fi
 deploy:
-    - provider: releases
-      api_key:
-          secure: Y14NPrjJz5lISK4s9AxZCTcXqO/uZOHXpqHal1TcTCUXytIzXeTiSw/ip7/N6pMtqXHV32BcnT61T2Y/+7cOzcq8xRLx6Ds0NyQARi1uu1zeBRU/6iIhx6ehpD9tYEeMbl3bucwWd48J+kdvU0D/WYVT/AIQeUC3PnYMyivRUJg82Qzcj/r7zPKWGs2oZ0Lg2qBz5bvNXodg1kWsa19/UpM+5Gs1r1PWa29y+YLIJYhI/Hkq15HbW7PuWjDNEJdDRivZleWrgN1w5g2IdhP51ywL0VhKq7pq2PpuBAGd4AyfjBVrm78LiJRG+5kl753YArrf1u5zRDGBexSwDyOq9rY3sGa9wBs6O04eLl31TAL3TEFELe3WZggDsrdCLMcdlJ1+oOkiaUPBWHPBI+UwR+rqLtBuLHq7hRYzILINkhgo5d34RZ3dbtLvTKC+kk32lkrTlVAyVfy+yfzMvasRn/0hVIXNg3hrSrpJU3GtaASNNyya48diQCNCy5CJYAvMoTKQ4fmGqCPQnZKRvwZHsPkvlcPne3/Fube/5Eg4jbBzvSfAAYEcb/bd9lZ07EVkkW/peZ5fYWgPnHMKv8NQmG/z80CVYm9O6Vc+DF8HjtH7QWQvvmZEcAfd3p44n02lezu4MRoLwn8Jy98VtzVDjyhk4aJsm8TK7ohxMB+QJMU=
-      file:
-          - "river-linux"
-          - "river-osx"
-      draft: true
-      skip_cleanup: true
-      on:
-          all_branches: true
+    provider: releases
+    draft: true
+    skip_cleanup: true
+    api_key:
+        secure: HG6xtNCjWxdOSmXJUR+zDU+kCJoSFxrW9iNNnu5/AporIcoYSXFdW7lNvk1piPJUnfun2F2F2/gECqru1H06INrU23IwICp+RuDYU26IwK8JFauUvMAwWlOqVLBekN+U9yC/LvIuz1f9kUowGUey7oWU8/42fYaZP7y2PnvyGrKJvUBD3eHjKWLOkXZNUmU9+WAjTNsm5+ahSL3OQaNZ2EdQSetYV6JKwqfyeooQEVgNUQgpEHl4GzKIFf8Bfsf75/aw8stG8H2PFGAJaKxBqwnW1A8QWh6HNQNlifUwcnwACydEmUX0XbNDPsjhxXfT6uISMhFlCt/0j4t5tnFyDOVGWlABcCyzg1aVXYLV2clnOj35ChAYwbBYe8aYRsQn8jxzGSNO6zA9yxrR7tdKbvyxlnnI0AIlCdXHGyc6Gr43nIaM9qpznsFWSm9SobXFjnQG5Ig2zx8aa7h366DIKGBJaLHLYZBCyEPod0UizGuncBQy0x85b58766pH7lorrkbbDRyuxflVGjtUGJrN6WHnm6jpG22FvjNjMBzj9dFb3sxd99vEIiOXLQWaGipnouab4bQffDg2T0TB5lQfbJh+3LdjmVX1hIPj3tx649oTPjifQN1wkjFZHuqnrWd2H/Sgc+sRelB8oykX54RZwwDn53GsJeYEtyrvCbKcZYQ=
+    file:
+        - "river-linux"
+        - "river-osx"
+    on:
+        all_branches: true
