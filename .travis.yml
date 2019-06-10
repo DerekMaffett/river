@@ -31,5 +31,3 @@ deploy:
           - "river-osx"
       draft: true
       skip_cleanup: true
-      on:
-          repo: DerekMaffett/river
