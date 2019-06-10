@@ -1,27 +1,35 @@
 language: generic
-
 cache:
     directories:
-        - $HOME/.stack
-
+        - "$HOME/.stack"
 os:
     - osx
     - linux
-
 addons:
     apt:
         packages:
             - libgmp-dev
-
 before_install:
-    # Download and unpack the stack executable
     - mkdir -p ~/.local/bin
     - export PATH=$HOME/.local/bin:$PATH
-    - if [ $TRAVIS_OS_NAME = linux ]; then travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'; else travis_retry curl -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar x --strip-components=1 -C ~/.local/bin '*/stack'; fi
-
+    - if [ $TRAVIS_OS_NAME = linux ]; then travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz
+      | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'; else travis_retry
+      curl -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar x --strip-components=1
+      -C ~/.local/bin '*/stack'; fi
 install:
-    # Build dependencies
     - stack --no-terminal --install-ghc test --only-dependencies
-
 script:
-    - stack --no-terminal test --no-haddock-deps
+    - stack --no-terminal test --local-bin-path ./bin --no-haddock-deps
+before_deploy:
+    - if [ $TRAVIS_OS_NAME = linux ]; then mv ./bin/river ./river-linux; else mv ./bin/river ./river-osx; fi
+deploy:
+    - provider: releases
+      api_key:
+          secure: Y14NPrjJz5lISK4s9AxZCTcXqO/uZOHXpqHal1TcTCUXytIzXeTiSw/ip7/N6pMtqXHV32BcnT61T2Y/+7cOzcq8xRLx6Ds0NyQARi1uu1zeBRU/6iIhx6ehpD9tYEeMbl3bucwWd48J+kdvU0D/WYVT/AIQeUC3PnYMyivRUJg82Qzcj/r7zPKWGs2oZ0Lg2qBz5bvNXodg1kWsa19/UpM+5Gs1r1PWa29y+YLIJYhI/Hkq15HbW7PuWjDNEJdDRivZleWrgN1w5g2IdhP51ywL0VhKq7pq2PpuBAGd4AyfjBVrm78LiJRG+5kl753YArrf1u5zRDGBexSwDyOq9rY3sGa9wBs6O04eLl31TAL3TEFELe3WZggDsrdCLMcdlJ1+oOkiaUPBWHPBI+UwR+rqLtBuLHq7hRYzILINkhgo5d34RZ3dbtLvTKC+kk32lkrTlVAyVfy+yfzMvasRn/0hVIXNg3hrSrpJU3GtaASNNyya48diQCNCy5CJYAvMoTKQ4fmGqCPQnZKRvwZHsPkvlcPne3/Fube/5Eg4jbBzvSfAAYEcb/bd9lZ07EVkkW/peZ5fYWgPnHMKv8NQmG/z80CVYm9O6Vc+DF8HjtH7QWQvvmZEcAfd3p44n02lezu4MRoLwn8Jy98VtzVDjyhk4aJsm8TK7ohxMB+QJMU=
+      file:
+          - "river-linux"
+          - "river-osx"
+      draft: true
+      skip_cleanup: true
+      on:
+          repo: DerekMaffett/river
