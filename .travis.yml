@@ -31,3 +31,4 @@ deploy:
           - "river-osx"
       draft: true
       skip_cleanup: true
+      all_branches: true
