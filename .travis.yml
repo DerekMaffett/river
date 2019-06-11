@@ -21,8 +21,8 @@ install:
 script:
     - stack build --copy-bins --test --no-terminal --local-bin-path ./bin --no-haddock-deps
 before_deploy:
-    - if [ $TRAVIS_OS_NAME = linux ]; then mv ./river ./river-linux; else mv ./river
-      ./river-osx; fi
+    - if [ $TRAVIS_OS_NAME = linux ]; then mv ./bin/river ./bin/river-linux; else mv ./bin/river
+      ./bin/river-osx; fi
 deploy:
     - provider: releases
       skip_cleanup: true
