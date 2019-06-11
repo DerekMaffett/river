@@ -1,0 +1,16 @@
+{
+    "name": "river",
+    "version": "1.0.0",
+    "description": "Workflow management CLI",
+    "bin": "./bin/river-cross-platform",
+    "directories": {
+        "test": "test"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:DerekMaffett/river.git"
+    },
+    "keywords": ["workflow", "jira", "bitbucket", "github"],
+    "author": "Derek Maffett",
+    "license": "MIT"
+}

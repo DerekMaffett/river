@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+unameOut="$(uname -s)"
+case "${unameOut}" in
+  Linux*)   executable=river-linux;;
+  Darwin*)  executable=river-osx;;
+  *)        executable=missing;;
+esac
+
+"${executable}"
