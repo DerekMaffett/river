@@ -2,7 +2,10 @@
     "name": "river",
     "version": "1.0.0",
     "description": "Workflow management CLI",
-    "bin": "./bin/river-cross-platform",
+    "bin": "./bin/river",
+    "scripts": {
+        "postinstall": "./bin/npm-postinstall.js"
+    },
     "directories": {
         "test": "test"
     },
