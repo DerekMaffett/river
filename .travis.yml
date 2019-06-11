@@ -19,9 +19,9 @@ before_install:
 install:
     - stack --no-terminal --install-ghc test --only-dependencies
 script:
-    - stack --no-terminal test --local-bin-path ./bin --no-haddock-deps
+    - stack build --copy-bins --test --no-terminal --local-bin-path . --no-haddock-deps
 before_deploy:
-    - if [ $TRAVIS_OS_NAME = linux ]; then mv ./bin/river ./river-linux; else mv ./bin/river
+    - if [ $TRAVIS_OS_NAME = linux ]; then mv ./river ./river-linux; else mv ./river
       ./river-osx; fi
 deploy:
     provider: releases
