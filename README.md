@@ -21,14 +21,11 @@ Currently managed tools:
 3. Repository management - Github, Bitbucket
 4. Bug tracking - Internal tooling
 
-Note: Binaries available currently for OSX only. Linux binaries available through compilation using Stack. Binaries will 
-be directly available for both platforms soon. 
-
 ## How to Install
 
-1. Clone this repository locally.
-2. Add `river/bin` to your `PATH` to use globally.
-3. Run `river init` on the root of your project. That's it. The program will check what information is available, what's missing, ask you for
+1. Download OSX and Linux binaries of the CLI on the [Releases][releases] page. Put the executable
+   on your path however you please and probably name it "river" to use the following examples directly.
+2. Run `river init` on the root of your project. That's it. The program will check what information is available, what's missing, ask you for
    any required data, and write a properly formatted config file which you can modify as desired. This tool is also meant to serve
    as a seamless upgrade tool in case of breaking version changes. There is also an example
    configuration which can be used to see what the final file should look like.
@@ -93,3 +90,4 @@ and moves your Jira ticket as specified.
    be useful information to add if you have an issue to raise.
 
 [tbd]: https://trunkbaseddevelopment.com/
+[releases]: https://github.com/DerekMaffett/river/releases

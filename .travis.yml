@@ -1,0 +1,36 @@
+language: generic
+cache:
+    directories:
+        - "$HOME/.stack"
+os:
+    - osx
+    - linux
+addons:
+    apt:
+        packages:
+            - libgmp-dev
+before_install:
+    - mkdir -p ~/.local/bin
+    - export PATH=$HOME/.local/bin:$PATH
+    - if [ $TRAVIS_OS_NAME = linux ]; then travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz
+      | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'; else travis_retry
+      curl -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar x --strip-components=1
+      -C ~/.local/bin '*/stack'; fi
+install:
+    - stack --no-terminal --install-ghc test --only-dependencies
+script:
+    - stack --no-terminal test --local-bin-path ./bin --no-haddock-deps
+before_deploy:
+    - if [ $TRAVIS_OS_NAME = linux ]; then mv ./bin/river ./river-linux; else mv ./bin/river
+      ./river-osx; fi
+deploy:
+    provider: releases
+    skip_cleanup: true
+    api_key:
+        secure: HG6xtNCjWxdOSmXJUR+zDU+kCJoSFxrW9iNNnu5/AporIcoYSXFdW7lNvk1piPJUnfun2F2F2/gECqru1H06INrU23IwICp+RuDYU26IwK8JFauUvMAwWlOqVLBekN+U9yC/LvIuz1f9kUowGUey7oWU8/42fYaZP7y2PnvyGrKJvUBD3eHjKWLOkXZNUmU9+WAjTNsm5+ahSL3OQaNZ2EdQSetYV6JKwqfyeooQEVgNUQgpEHl4GzKIFf8Bfsf75/aw8stG8H2PFGAJaKxBqwnW1A8QWh6HNQNlifUwcnwACydEmUX0XbNDPsjhxXfT6uISMhFlCt/0j4t5tnFyDOVGWlABcCyzg1aVXYLV2clnOj35ChAYwbBYe8aYRsQn8jxzGSNO6zA9yxrR7tdKbvyxlnnI0AIlCdXHGyc6Gr43nIaM9qpznsFWSm9SobXFjnQG5Ig2zx8aa7h366DIKGBJaLHLYZBCyEPod0UizGuncBQy0x85b58766pH7lorrkbbDRyuxflVGjtUGJrN6WHnm6jpG22FvjNjMBzj9dFb3sxd99vEIiOXLQWaGipnouab4bQffDg2T0TB5lQfbJh+3LdjmVX1hIPj3tx649oTPjifQN1wkjFZHuqnrWd2H/Sgc+sRelB8oykX54RZwwDn53GsJeYEtyrvCbKcZYQ=
+    file:
+        - "river-linux"
+        - "river-osx"
+    on:
+        branch: master
+        tags: true
