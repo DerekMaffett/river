@@ -2,16 +2,19 @@ language: generic
 cache:
     directories:
         - "$HOME/.stack"
-os:
-    - osx
-    - linux
 addons:
     apt:
         packages:
             - libgmp-dev
+os:
+    - osx
+    - linux
 before_install:
-    - mkdir -p ~/.local/bin
     - export PATH=$HOME/.local/bin:$PATH
+    - pip3 install awscli --upgrade --user
+    - aws s3 ls
+    - mkdir -p ~/$TRAVIS_BUILD_NUMBER/$TRAVIS_OS_NAME
+    - mkdir -p ~/.local/bin
     - if [ $TRAVIS_OS_NAME = linux ]; then travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz
       | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'; else travis_retry
       curl -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar x --strip-components=1
@@ -20,25 +23,28 @@ install:
     - stack --no-terminal --install-ghc test --only-dependencies
 script:
     - stack build --copy-bins --test --no-terminal --local-bin-path ./bin --no-haddock-deps
-before_deploy:
-    - if [ $TRAVIS_OS_NAME = linux ]; then mv ./bin/river ./bin/river-linux; else mv ./bin/river
-      ./bin/river-osx; fi
-deploy:
-    - provider: releases
-      skip_cleanup: true
-      api_key:
-          secure: HG6xtNCjWxdOSmXJUR+zDU+kCJoSFxrW9iNNnu5/AporIcoYSXFdW7lNvk1piPJUnfun2F2F2/gECqru1H06INrU23IwICp+RuDYU26IwK8JFauUvMAwWlOqVLBekN+U9yC/LvIuz1f9kUowGUey7oWU8/42fYaZP7y2PnvyGrKJvUBD3eHjKWLOkXZNUmU9+WAjTNsm5+ahSL3OQaNZ2EdQSetYV6JKwqfyeooQEVgNUQgpEHl4GzKIFf8Bfsf75/aw8stG8H2PFGAJaKxBqwnW1A8QWh6HNQNlifUwcnwACydEmUX0XbNDPsjhxXfT6uISMhFlCt/0j4t5tnFyDOVGWlABcCyzg1aVXYLV2clnOj35ChAYwbBYe8aYRsQn8jxzGSNO6zA9yxrR7tdKbvyxlnnI0AIlCdXHGyc6Gr43nIaM9qpznsFWSm9SobXFjnQG5Ig2zx8aa7h366DIKGBJaLHLYZBCyEPod0UizGuncBQy0x85b58766pH7lorrkbbDRyuxflVGjtUGJrN6WHnm6jpG22FvjNjMBzj9dFb3sxd99vEIiOXLQWaGipnouab4bQffDg2T0TB5lQfbJh+3LdjmVX1hIPj3tx649oTPjifQN1wkjFZHuqnrWd2H/Sgc+sRelB8oykX54RZwwDn53GsJeYEtyrvCbKcZYQ=
-      file:
-          - "./bin/river-linux"
-          - "./bin/river-osx"
-      on:
-          tags: true
-          repo: DerekMaffett/river
-          branch: master
-
-    - provider: npm
-      email: derekgmaffett@gmail.com
-      api_key:
-          secure: dSjdcHj7H4AKsFreHOtsbAzWirmrlXrK51mPAfb5QZRFvOeCcay9NHN0jc/GSBC7M01QRLvHF/H0fk+Dpo77p7TVSUOwhbfKf07Tp3NCjJdIVvUFrVAMh2gkG021JapNHyOd7ehU/pOB0PZPUl/Gd0W2zeEwZGg+yYREYaIdL7Vd4uEf6dQjYuYUD6uWuJNmU4uPW4hmNPWdDj+QFpMRuho2E9DG5cgErB+AAMzAMfKZVn+hV4KisbBvZeQ0N0iyWuU/0n11YOJDbQPC5xMAY1MOaScdSjr6EkCRC7NZ6ZjbSKKs352BN/lvurDkzs7OqnHlne3eYLcpNqF7begUGHQ0KsMjuywACQv41ovhQA2PQzjKrMwc0mrQRuTNIg7uD2CC7LkCy8t7JzRRIn9oefiD82aeJNDqCnRWdaYXeeIOvVXCZ+6PnHmBQltZFZ2gWEnwBBfCz2Malw4a4FqMWXcYQMAA1Z18Rf38lKiMk4RQ3oHIoWH3CL7vY8DIlM0c9BzOvETzfUsIeG3ribyNcS9xUivkQ27BX9m7lwcmgIRhMz8paskPPwFZBbnCrB2PDe89V0+Cioei9CuY6co0FdVV21rN1wYlP7q3iiguKSrc1AUqvKNFZ//54Ioh+e8xQb8DFV2a451ZRYOQMTctF+GriRdWd4HboDILSUFDm4k=
-      on:
-          all_branches: true
+    - aws s3 mv ./bin/river s3://river-dist/$TRAVIS_BUILD_NUMBER/$TRAVIS_OS_NAME/river
+jobs:
+    include:
+        - stage: deploy
+          deploy:
+              - provider: releases
+                api_key:
+                    secure: HG6xtNCjWxdOSmXJUR+zDU+kCJoSFxrW9iNNnu5/AporIcoYSXFdW7lNvk1piPJUnfun2F2F2/gECqru1H06INrU23IwICp+RuDYU26IwK8JFauUvMAwWlOqVLBekN+U9yC/LvIuz1f9kUowGUey7oWU8/42fYaZP7y2PnvyGrKJvUBD3eHjKWLOkXZNUmU9+WAjTNsm5+ahSL3OQaNZ2EdQSetYV6JKwqfyeooQEVgNUQgpEHl4GzKIFf8Bfsf75/aw8stG8H2PFGAJaKxBqwnW1A8QWh6HNQNlifUwcnwACydEmUX0XbNDPsjhxXfT6uISMhFlCt/0j4t5tnFyDOVGWlABcCyzg1aVXYLV2clnOj35ChAYwbBYe8aYRsQn8jxzGSNO6zA9yxrR7tdKbvyxlnnI0AIlCdXHGyc6Gr43nIaM9qpznsFWSm9SobXFjnQG5Ig2zx8aa7h366DIKGBJaLHLYZBCyEPod0UizGuncBQy0x85b58766pH7lorrkbbDRyuxflVGjtUGJrN6WHnm6jpG22FvjNjMBzj9dFb3sxd99vEIiOXLQWaGipnouab4bQffDg2T0TB5lQfbJh+3LdjmVX1hIPj3tx649oTPjifQN1wkjFZHuqnrWd2H/Sgc+sRelB8oykX54RZwwDn53GsJeYEtyrvCbKcZYQ=
+                file:
+                    - "./bin/river-linux"
+                    - "./bin/river-osx"
+                on:
+                    tags: true
+                    repo: DerekMaffett/river
+                    branch: master
+              - provider: npm
+                email: derekgmaffett@gmail.com
+                api_key:
+                    secure: dSjdcHj7H4AKsFreHOtsbAzWirmrlXrK51mPAfb5QZRFvOeCcay9NHN0jc/GSBC7M01QRLvHF/H0fk+Dpo77p7TVSUOwhbfKf07Tp3NCjJdIVvUFrVAMh2gkG021JapNHyOd7ehU/pOB0PZPUl/Gd0W2zeEwZGg+yYREYaIdL7Vd4uEf6dQjYuYUD6uWuJNmU4uPW4hmNPWdDj+QFpMRuho2E9DG5cgErB+AAMzAMfKZVn+hV4KisbBvZeQ0N0iyWuU/0n11YOJDbQPC5xMAY1MOaScdSjr6EkCRC7NZ6ZjbSKKs352BN/lvurDkzs7OqnHlne3eYLcpNqF7begUGHQ0KsMjuywACQv41ovhQA2PQzjKrMwc0mrQRuTNIg7uD2CC7LkCy8t7JzRRIn9oefiD82aeJNDqCnRWdaYXeeIOvVXCZ+6PnHmBQltZFZ2gWEnwBBfCz2Malw4a4FqMWXcYQMAA1Z18Rf38lKiMk4RQ3oHIoWH3CL7vY8DIlM0c9BzOvETzfUsIeG3ribyNcS9xUivkQ27BX9m7lwcmgIRhMz8paskPPwFZBbnCrB2PDe89V0+Cioei9CuY6co0FdVV21rN1wYlP7q3iiguKSrc1AUqvKNFZ//54Ioh+e8xQb8DFV2a451ZRYOQMTctF+GriRdWd4HboDILSUFDm4k=
+                on:
+                    all_branches: true
+env:
+    global:
+        - secure: VxQnJykbq6VkuQasC7jhGLct09cF45xVFg1Y4N8Th6xI/uM3IagC08x1Pc5/LCyWgvs6DReWMZHzmMKDPsWScENmEm3fl1TB6k3+dsSFmJTu+2HIJ4N3poNqeoLoylOhVk8NFQEZ+vCRP8yhOcLS3q7ib/aDJrB4NCHLxbjZ585qadfoJ/hQfkBPsj4EgvFEQPCCWlP7bbaXIvzQMnuQm3O5rM4fu5+lAkpBTxYAjMopbPDEMgG8kYthGt79pI1hULLkYz2sWPGm7Jv3qqiCSqJxpcmZd7Psro7CX5bR8mgYIuP/tiM1tEOdznbnc6RYgB3z3kCFukne7PvGIjesvL8VXw6gUjA3f5p8HcFUWemu0drzO42emgVYqNp03q5jJNDaXUUsK3l9Rhz+uWm/nJWsAXEX9oZdyL1eTJtyuPEPWTIHlxjUwsLuBHBto58KwNG08/4ailIDfmuCoFbb0z8TNO4Q6MIyz5D7hgmi4+It4kQ2+Rq0xU9XOh6bttgGuVVlBNDxIiVWGzovjOwTJ42mjPVZUJ1nir1mjHFL5WY4h7fefK1/ht7QpB1HdkEcvUrijhLIOaGkLZrmScTggbkWHs6hkpG/UzZZjou46+SVC4L+P6UpYSrhe8Ta2tTuGUd2xTbMUWnm1yDNcStCJqn8Pi1RW1Fby4nsiM8k9yY=
+        - secure: V5iQzU8D51LJCD9hM6Q0G9uDAARRKmYMISO/TwDYtyd2kkoMKjpyLSvOUppB7Xjd+Kx0apxL6Nln/TkV6ox3zchIMqAEkwYkQZTm/8yW9FbGyk4HaEbS47VUl+PbnbeCqHdE1brlMTzgzIIomNT519RC5NZLasN0o0QDPTp9GU56Uas3tvWE+DydLxZJSqamTj8S8eQjJFvv2chQIrHtByeq7Q19eJDAPcl85Xf4FUoy3OSHvC9DpAgecD8q9zu1lpXCCQeQOITWaoSBzLnVcCHzxwCjCvxLjz7glJxjDZlbIBgUGsft9N/0n9uYg5CVCjrNymdrD1RH3y3x2FSYR3lXIgCtJTJ3oTDl5RdiIs1eF8AksTAxg/HFLrSjPwyn6oDH8ILClYdtkMSn1iu1APatmKqvpj3x9ZqvQceTRoVxJPenHKM4K5Dw/eaKcj3z+9XHpUN9BtSTcRz5b0LLZ7bz1CjaD016twLz+Dg9MxZGhZm+c+G4GM48+oLKPA0Irr8fDI1X60N0YjQdw/l6SWse8bYXKR/5Ikdi3+qGxZDmCuuSyxtOYXfC1OE2Zadl8nSHAmn/GZYOH6IN19aawcFiNjCK3g1qb9hLvmF8MpNnDfTN9VDqyPefJu4WaQ+lC00NJYkvGNavxZuM8hQNeIsRYpqFdiS+dTZGzBxdNQ0=
