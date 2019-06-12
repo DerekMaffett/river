@@ -1,7 +1,7 @@
 language: generic
-# cache:
-#     directories:
-#         - "$HOME/.stack"
+cache:
+    directories:
+        - "$HOME/.stack"
 addons:
     apt:
         packages:
@@ -12,8 +12,6 @@ os:
 before_install:
     - if [ $TRAVIS_OS_NAME = linux ]; then export PATH=$HOME/.local/bin:$PATH; else export PATH=$HOME/Library/Python/2.7/bin:$PATH; fi
     - pip install awscli --upgrade --user
-    - pip show awscli
-    - aws s3 ls
     - mkdir -p ~/$TRAVIS_BUILD_NUMBER/$TRAVIS_OS_NAME
     - mkdir -p ~/.local/bin
     - if [ $TRAVIS_OS_NAME = linux ]; then travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz
