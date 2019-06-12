@@ -29,9 +29,9 @@ jobs:
               - if [ $TRAVIS_OS_NAME = linux ]; then export PATH=$HOME/.local/bin:$PATH; else export PATH=$HOME/Library/Python/2.7/bin:$PATH; fi
               - pip install awscli --upgrade --user
           install:
-              - aws s3 sync s3://river-dist/$TRAVIS_BUILD_NUMBER ./bin/s3
-              - mv ./bin/s3/linux/river ./bin/river-linux
-              - mv ./bin/s3/osx/river ./bin/river-osx
+              - aws s3 mv s3://river-dist/$TRAVIS_BUILD_NUMBER/linux/river ./bin/river-linux
+              - aws s3 mv s3://river-dist/$TRAVIS_BUILD_NUMBER/osx/river ./bin/river-osx
+              - aws s3 rm --recursive s3://river-dist/
           script: true
           deploy:
               - provider: releases
