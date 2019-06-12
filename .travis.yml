@@ -31,7 +31,7 @@ jobs:
           install:
               - aws s3 mv s3://river-dist/$TRAVIS_BUILD_NUMBER/linux/river ./bin/river-linux
               - aws s3 mv s3://river-dist/$TRAVIS_BUILD_NUMBER/osx/river ./bin/river-osx
-              - aws s3 rm --recursive s3://river-dist/
+              - aws s3 rm --recursive s3://river-dist/$TRAVIS_BUILD_NUMBER/
           script: true
           deploy:
               - provider: releases
