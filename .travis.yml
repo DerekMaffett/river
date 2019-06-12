@@ -46,6 +46,7 @@ jobs:
                     branch: master
               - provider: npm
                 email: derekgmaffett@gmail.com
+                skip_cleanup: true
                 api_key:
                     secure: dSjdcHj7H4AKsFreHOtsbAzWirmrlXrK51mPAfb5QZRFvOeCcay9NHN0jc/GSBC7M01QRLvHF/H0fk+Dpo77p7TVSUOwhbfKf07Tp3NCjJdIVvUFrVAMh2gkG021JapNHyOd7ehU/pOB0PZPUl/Gd0W2zeEwZGg+yYREYaIdL7Vd4uEf6dQjYuYUD6uWuJNmU4uPW4hmNPWdDj+QFpMRuho2E9DG5cgErB+AAMzAMfKZVn+hV4KisbBvZeQ0N0iyWuU/0n11YOJDbQPC5xMAY1MOaScdSjr6EkCRC7NZ6ZjbSKKs352BN/lvurDkzs7OqnHlne3eYLcpNqF7begUGHQ0KsMjuywACQv41ovhQA2PQzjKrMwc0mrQRuTNIg7uD2CC7LkCy8t7JzRRIn9oefiD82aeJNDqCnRWdaYXeeIOvVXCZ+6PnHmBQltZFZ2gWEnwBBfCz2Malw4a4FqMWXcYQMAA1Z18Rf38lKiMk4RQ3oHIoWH3CL7vY8DIlM0c9BzOvETzfUsIeG3ribyNcS9xUivkQ27BX9m7lwcmgIRhMz8paskPPwFZBbnCrB2PDe89V0+Cioei9CuY6co0FdVV21rN1wYlP7q3iiguKSrc1AUqvKNFZ//54Ioh+e8xQb8DFV2a451ZRYOQMTctF+GriRdWd4HboDILSUFDm4k=
                 on:
