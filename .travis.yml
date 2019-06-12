@@ -11,7 +11,7 @@ os:
     - linux
 before_install:
     - export PATH=$HOME/.local/bin:$PATH
-    - pip3 install awscli --upgrade --user
+    - pip install awscli --upgrade --user
     - aws s3 ls
     - mkdir -p ~/$TRAVIS_BUILD_NUMBER/$TRAVIS_OS_NAME
     - mkdir -p ~/.local/bin
