@@ -43,14 +43,14 @@ jobs:
                 on:
                     tags: true
                     repo: DerekMaffett/river
-                    branch: master
               - provider: npm
                 email: derekgmaffett@gmail.com
                 skip_cleanup: true
                 api_key:
                     secure: dSjdcHj7H4AKsFreHOtsbAzWirmrlXrK51mPAfb5QZRFvOeCcay9NHN0jc/GSBC7M01QRLvHF/H0fk+Dpo77p7TVSUOwhbfKf07Tp3NCjJdIVvUFrVAMh2gkG021JapNHyOd7ehU/pOB0PZPUl/Gd0W2zeEwZGg+yYREYaIdL7Vd4uEf6dQjYuYUD6uWuJNmU4uPW4hmNPWdDj+QFpMRuho2E9DG5cgErB+AAMzAMfKZVn+hV4KisbBvZeQ0N0iyWuU/0n11YOJDbQPC5xMAY1MOaScdSjr6EkCRC7NZ6ZjbSKKs352BN/lvurDkzs7OqnHlne3eYLcpNqF7begUGHQ0KsMjuywACQv41ovhQA2PQzjKrMwc0mrQRuTNIg7uD2CC7LkCy8t7JzRRIn9oefiD82aeJNDqCnRWdaYXeeIOvVXCZ+6PnHmBQltZFZ2gWEnwBBfCz2Malw4a4FqMWXcYQMAA1Z18Rf38lKiMk4RQ3oHIoWH3CL7vY8DIlM0c9BzOvETzfUsIeG3ribyNcS9xUivkQ27BX9m7lwcmgIRhMz8paskPPwFZBbnCrB2PDe89V0+Cioei9CuY6co0FdVV21rN1wYlP7q3iiguKSrc1AUqvKNFZ//54Ioh+e8xQb8DFV2a451ZRYOQMTctF+GriRdWd4HboDILSUFDm4k=
                 on:
-                    all_branches: true
+                    tags: true
+                    repo: DerekMaffett/river
 env:
     global:
         - secure: VxQnJykbq6VkuQasC7jhGLct09cF45xVFg1Y4N8Th6xI/uM3IagC08x1Pc5/LCyWgvs6DReWMZHzmMKDPsWScENmEm3fl1TB6k3+dsSFmJTu+2HIJ4N3poNqeoLoylOhVk8NFQEZ+vCRP8yhOcLS3q7ib/aDJrB4NCHLxbjZ585qadfoJ/hQfkBPsj4EgvFEQPCCWlP7bbaXIvzQMnuQm3O5rM4fu5+lAkpBTxYAjMopbPDEMgG8kYthGt79pI1hULLkYz2sWPGm7Jv3qqiCSqJxpcmZd7Psro7CX5bR8mgYIuP/tiM1tEOdznbnc6RYgB3z3kCFukne7PvGIjesvL8VXw6gUjA3f5p8HcFUWemu0drzO42emgVYqNp03q5jJNDaXUUsK3l9Rhz+uWm/nJWsAXEX9oZdyL1eTJtyuPEPWTIHlxjUwsLuBHBto58KwNG08/4ailIDfmuCoFbb0z8TNO4Q6MIyz5D7hgmi4+It4kQ2+Rq0xU9XOh6bttgGuVVlBNDxIiVWGzovjOwTJ42mjPVZUJ1nir1mjHFL5WY4h7fefK1/ht7QpB1HdkEcvUrijhLIOaGkLZrmScTggbkWHs6hkpG/UzZZjou46+SVC4L+P6UpYSrhe8Ta2tTuGUd2xTbMUWnm1yDNcStCJqn8Pi1RW1Fby4nsiM8k9yY=
