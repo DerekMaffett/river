@@ -4,7 +4,7 @@
     "description": "Workflow management CLI",
     "bin": "./bin/river",
     "scripts": {
-        "postinstall": "./bin/npm-postinstall.js"
+        "preinstall": "./bin/npm-postinstall.js"
     },
     "directories": {
         "test": "test"
