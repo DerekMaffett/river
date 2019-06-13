@@ -23,12 +23,33 @@ Currently managed tools:
 
 ## How to Install
 
-1. Download OSX and Linux binaries of the CLI on the [Releases][releases] page. Put the executable
-   on your path however you please and probably name it "river" to use the following examples directly.
-2. Run `river init` on the root of your project. That's it. The program will check what information is available, what's missing, ask you for
-   any required data, and write a properly formatted config file which you can modify as desired. This tool is also meant to serve
-   as a seamless upgrade tool in case of breaking version changes. There is also an example
-   configuration which can be used to see what the final file should look like.
+To have `river` available globally -
+
+```
+npm install -g river-cli
+```
+
+Or to try out River without the installation, use [npx][npx].
+
+```
+npx river-cli
+```
+
+Check the [Releases][releases] page if you prefer to download and install the binaries directly.
+
+## Configuration
+
+At the root of your project, run:
+
+```
+river init
+```
+
+That's it. The program will check what information is available, what's missing, ask you for
+any required data, and write a properly formatted config file which you can modify as desired. This tool is also meant to serve
+as a seamless upgrade tool in case of breaking version changes. There is also an example
+configuration which can be used to see what the final file should look like. You can freely modify the configurations after
+they are generated.
 
 `.river.env.json` is where your private or personal settings for the project are stored. This _should not_ be stored
 in your git history. `river init` will attempt to add the file to your project `.gitignore` file but please ensure it is since
@@ -91,3 +112,4 @@ and moves your Jira ticket as specified.
 
 [tbd]: https://trunkbaseddevelopment.com/
 [releases]: https://github.com/DerekMaffett/river/releases
+[npx]: https://github.com/zkat/npx
