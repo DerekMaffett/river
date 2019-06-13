@@ -75,12 +75,9 @@ getConfigFromPrompt forceRebuild = do
             else getFieldFromConfigOrPrompt files
                                             dataPathSuggestion
                                             promptForField
-    let getAuth usernameField passwordField label = do
-            username <- getField usernameField
-                                 (Logger.query $ label <> " username: ")
-            password <- getField
-                passwordField
-                (Logger.queryMasked $ label <> " password: ")
+    let getAuth getUsernameField getPasswordField = do
+            username <- getUsernameField
+            password <- getPasswordField
             return $ Config.BasicAuthCredentials username password
     repoManager <- do
         repoManagerType <-
@@ -100,9 +97,13 @@ getConfigFromPrompt forceRebuild = do
                     $ Logger.query "Repo name: "
                 repoOrg <- getField Config.bitbucketRepoOrgF
                     $ Logger.query "Repo org: "
-                auth <- getAuth Config.bitbucketUsernameF
-                                Config.bitbucketPasswordF
-                                "Bitbucket"
+                auth <- getAuth
+                    ( getField Config.bitbucketUsernameF
+                    $ Logger.query "Bitbucket username: "
+                    )
+                    ( getField Config.bitbucketPasswordF
+                    $ Logger.queryMasked "Bitbucket App Password: "
+                    )
                 defaultReviewers <- getDefaultReviewers files auth
                 return $ Config.Bitbucket $ Config.BitbucketConfig {..}
             Config.GithubManager -> do
@@ -110,9 +111,13 @@ getConfigFromPrompt forceRebuild = do
                     $ Logger.query "Repo name: "
                 repoOrg <- getField Config.githubRepoOrgF
                     $ Logger.query "Repo org: "
-                auth <- getAuth Config.githubUsernameF
-                                Config.githubPasswordF
-                                "Github"
+                auth <- getAuth
+                    ( getField Config.githubUsernameF
+                    $ Logger.query "Github username: "
+                    )
+                    ( getField Config.githubPasswordF
+                    $ Logger.queryMasked "Github API Token: "
+                    )
                 return $ Config.Github $ Config.GithubConfig {..}
     projectManager <- do
         projectManagerType <-
@@ -128,7 +133,13 @@ getConfigFromPrompt forceRebuild = do
                     $ Logger.query "Jira project key: "
                 domainName <- getField Config.jiraDomainNameF
                     $ Logger.query "Jira domain name: "
-                auth <- getAuth Config.jiraUsernameF Config.jiraPasswordF "Jira"
+                auth <- getAuth
+                    ( getField Config.jiraUsernameF
+                    $ Logger.query "Jira account email: "
+                    )
+                    ( getField Config.jiraPasswordF
+                    $ Logger.queryMasked "Jira API Token: "
+                    )
                 let partialJiraConfig = Config.JiraConfig {..}
                 onStart <- getField Config.jiraOnStartF
                     $ getTransitionName partialJiraConfig "starting a task"
