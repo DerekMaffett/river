@@ -1,6 +1,6 @@
 {
     "name": "river-cli",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "Workflow management CLI",
     "bin": "./bin/river",
     "scripts": {
