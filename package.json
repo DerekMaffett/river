@@ -1,6 +1,6 @@
 {
     "name": "river-cli",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Workflow management CLI",
     "bin": "./bin/river",
     "scripts": {
@@ -13,7 +13,12 @@
         "type": "git",
         "url": "git@github.com:DerekMaffett/river.git"
     },
-    "keywords": ["workflow", "jira", "bitbucket", "github"],
+    "keywords": [
+        "workflow",
+        "jira",
+        "bitbucket",
+        "github"
+    ],
     "author": "Derek Maffett",
     "license": "MIT"
 }
