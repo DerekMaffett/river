@@ -41,6 +41,8 @@ dependencies:
     - haskeline
     - graphql
     - safe-exceptions
+    - reflex
+    - reflex-dom
 
 library:
     source-dirs:
@@ -48,12 +50,15 @@ library:
 
 default-extensions:
     - OverloadedStrings
+    - LambdaCase
     - ExistentialQuantification
     - RecordWildCards
     - NamedFieldPuns
     - DuplicateRecordFields
     - DeriveGeneric
     - DeriveAnyClass
+    - RecursiveDo
+    - ScopedTypeVariables
 
 executables:
     river:
@@ -91,4 +96,3 @@ tests:
             - river
             - hspec
             - QuickCheck
-

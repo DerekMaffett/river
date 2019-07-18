@@ -4,6 +4,7 @@ module Init
 where
 
 import qualified Logger
+import qualified GUI
 import qualified Api.Jira                      as Jira
 import qualified Api.Bitbucket                 as Bitbucket
 import qualified Types
@@ -19,12 +20,18 @@ import qualified System.Directory              as Dir
 import           Control.Monad
 import qualified Control.Monad.Reader          as Reader
 
-initializeApplication :: Bool -> Reader.ReaderT Config.LoggerContext IO ()
-initializeApplication forceRebuild = do
-    config <- getConfigFromPrompt forceRebuild
+initializeApplication
+    :: Bool -> Bool -> Reader.ReaderT Config.LoggerContext IO ()
+initializeApplication useGUI forceRebuild = do
+    config <- getConfig
+    undefined
     Reader.liftIO $ writeToConfigFiles config
     addEnvFileToGitignore
     Logger.logNotice "Config files written"
+  where
+    getConfig = if useGUI
+        then Reader.liftIO $ GUI.getConfigFromGUI forceRebuild
+        else getConfigFromPrompt forceRebuild
 
 
 addEnvFileToGitignore :: Reader.ReaderT Config.LoggerContext IO ()
@@ -43,7 +50,6 @@ addEnvFileToGitignore = do
   where
     riverEnvFilePath  = ".river.env.json"
     gitignoreFilePath = ".gitignore"
-
 
 
 getFieldFromConfigOrPrompt
@@ -105,7 +111,7 @@ getConfigFromPrompt forceRebuild = do
                     $ Logger.queryMasked "Bitbucket App Password: "
                     )
                 defaultReviewers <- getDefaultReviewers files auth
-                return $ Config.Bitbucket $ Config.BitbucketConfig {..}
+                return $ Config.Bitbucket $ Config.BitbucketConfig { .. }
             Config.GithubManager -> do
                 repoName <- getField Config.githubRepoNameF
                     $ Logger.query "Repo name: "
@@ -118,7 +124,7 @@ getConfigFromPrompt forceRebuild = do
                     ( getField Config.githubPasswordF
                     $ Logger.queryMasked "Github API Token: "
                     )
-                return $ Config.Github $ Config.GithubConfig {..}
+                return $ Config.Github $ Config.GithubConfig { .. }
     projectManager <- do
         projectManagerType <-
             getField Config.projectManagerTypeF
@@ -140,7 +146,7 @@ getConfigFromPrompt forceRebuild = do
                     ( getField Config.jiraPasswordF
                     $ Logger.queryMasked "Jira API Token: "
                     )
-                let partialJiraConfig = Config.JiraConfig {..}
+                let partialJiraConfig = Config.JiraConfig { .. }
                 onStart <- getField Config.jiraOnStartF
                     $ getTransitionName partialJiraConfig "starting a task"
                 onPRCreation <-
@@ -149,7 +155,7 @@ getConfigFromPrompt forceRebuild = do
                                                     "starting a PR"
                 onMerge <- getField Config.jiraOnMergeF
                     $ getTransitionName partialJiraConfig "merging a PR"
-                return $ Config.Jira $ Config.JiraConfig {..}
+                return $ Config.Jira $ Config.JiraConfig { .. }
     workingBranch <-
         getField Config.workingBranchF $ Logger.queryWithSuggestions
             "Main git branch (tab for suggestions): "
@@ -160,7 +166,7 @@ getConfigFromPrompt forceRebuild = do
             ["origin"]
     bugCategories <- getField Config.bugCategoriesF $ words <$> Logger.query
         "Bug categories (separate by spaces): "
-    return Config.Config {..}
+    return Config.Config { .. }
 
 getDefaultReviewers
     :: (Maybe A.Object, Maybe A.Object)
@@ -324,20 +330,20 @@ aesonPrettyConfig :: Pretty.Config
 aesonPrettyConfig = Pretty.Config
     { confIndent          = Pretty.Spaces 4
     , confCompare         = Pretty.keyOrder
-        [ "workingBranch"
-        , "bugCategories"
-        , "repoManager"
-        , "projectManager"
-        , "name"
-        , "settings"
-        , "repoName"
-        , "repoOrg"
-        , "defaultReviewers"
-        , "projectKey"
-        , "domainName"
-        , "username"
-        , "password"
-        ]
+                                [ "workingBranch"
+                                , "bugCategories"
+                                , "repoManager"
+                                , "projectManager"
+                                , "name"
+                                , "settings"
+                                , "repoName"
+                                , "repoOrg"
+                                , "defaultReviewers"
+                                , "projectKey"
+                                , "domainName"
+                                , "username"
+                                , "password"
+                                ]
     , confNumFormat       = Pretty.Generic
     , confTrailingNewline = False
     }

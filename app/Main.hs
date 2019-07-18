@@ -28,6 +28,7 @@ data MergeOptions = MergeOptions
 data InitOptions = InitOptions
   { useDebugLogger :: Bool
   , forceRebuild :: Bool
+  , useGui :: Bool
   } deriving (Show)
 
 data Options
@@ -38,6 +39,10 @@ data Options
 
 debugModeFlag :: Parser Bool
 debugModeFlag = switch $ long "debug" <> short 'd' <> help "debug mode"
+
+useGuiFlag :: Parser Bool
+useGuiFlag =
+    switch $ long "graphical" <> short 'g' <> help "use graphical interface"
 
 issueKeyOpt :: Parser Begin.IssueSource
 issueKeyOpt =
@@ -65,7 +70,9 @@ initOpts :: ParserInfo Options
 initOpts = info optsParser desc
   where
     optsParser =
-        Init <$> liftA2 InitOptions debugModeFlag forceRebuildFlag <**> helper
+        Init
+            <$>  liftA3 InitOptions debugModeFlag forceRebuildFlag useGuiFlag
+            <**> helper
     forceRebuildFlag = switch $ long "force-rebuild" <> short 'f' <> help
         "force rebuild from scratch"
     desc =
@@ -125,9 +132,9 @@ runProgram options = do
             runWithConfigContext useDebugLogger $ Review.review
         Merge (MergeOptions { useDebugLogger }) ->
             runWithConfigContext useDebugLogger $ Merge.merge
-        Init (InitOptions { forceRebuild, useDebugLogger }) ->
+        Init (InitOptions { forceRebuild, useDebugLogger, useGui }) ->
             runWithLoggerContext useDebugLogger
-                $ Init.initializeApplication forceRebuild
+                $ Init.initializeApplication True forceRebuild
   where
     runWithConfigContext useDebugLogger program = do
         logger       <- Logger.initializeLogger useDebugLogger
