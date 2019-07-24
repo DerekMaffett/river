@@ -62,6 +62,7 @@ default-extensions:
     - RecursiveDo
     - ScopedTypeVariables
     - TemplateHaskell
+    - FlexibleContexts
 
 executables:
     river:

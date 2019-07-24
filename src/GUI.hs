@@ -4,6 +4,7 @@ import Reflex.Dom
 import Data.FileEmbed
 import Data.Maybe
 import Data.Either
+import Data.List
 import qualified Data.Text as T
 import           Control.Monad.IO.Class
 import qualified Config
@@ -18,15 +19,24 @@ getConfigFromGUI forceRebuild = do
 
 css = $(embedFile "src/init.css")
 
+createDropdownOptions = zipWith (\index (val, displayVal) -> (index, val, displayVal)) ([0..] :: [Integer])
+
+getReflexDropdownOptions :: [(Integer, a, T.Text)] -> Map.Map Integer T.Text
+getReflexDropdownOptions = Map.fromList . fmap (\(index, val, displayVal) -> (index, displayVal))
+
+getValueFromIndex options index = fromJust . fmap (\(_, val, _) -> val) . find (\(i, _, _) -> i == index) $ options
+getIndexFromValue options value = fromJust . fmap (\(i, _, _) -> i) . find (\(_, val, _) -> val == value) $ options
+
+dropdownValue options ddropdown = getValueFromIndex options <$> _dropdown_value ddropdown
+
 bodyElement :: MonadWidget t m => (Maybe A.Object, Maybe A.Object) -> m ()
 bodyElement configFiles = do
     let 
       getField = getFieldFromConfigFiles configFiles
-      repoManagerOptions = Map.fromList[(1, "Github"), (2, "Bitbucket")]
-      convertRepoManagerType = \case
-        Config.GithubManager -> 1 
-        Config.BitbucketManager -> 2
-      repoManagerType = convertRepoManagerType $ getField Config.GithubManager Config.repoManagerTypeF
+
+
+      repoManagerOptions = createDropdownOptions [(Config.GithubManager, "Github"), (Config.BitbucketManager, "Bitbucket")]
+      repoManagerType = getField Config.GithubManager Config.repoManagerTypeF
                                        
     elClass "section" "section" $ do
       elClass "div" "container columns" $ do
@@ -35,7 +45,7 @@ bodyElement configFiles = do
           ddi <- selectField "Repo Manager" repoManagerType repoManagerOptions
           ti <- textField "Working Branch" (getFieldFromConfigFiles configFiles "" Config.workingBranchF)
           eClick <- button "submit"
-          let eFormSubmit = tagPromptlyDyn (value ddi) eClick
+          let eFormSubmit = tagPromptlyDyn (dropdownValue repoManagerOptions ddi) eClick
           performEvent_ (ffor eFormSubmit $ \val -> liftIO . putStrLn . show $ val)
     return ()
 
@@ -43,14 +53,14 @@ getFieldFromConfigFiles :: (A.FromJSON a) => (Maybe A.Object, Maybe A.Object) ->
 getFieldFromConfigFiles files defaultValue dataPathSuggestion = 
   fromRight defaultValue $ Config.parseConfig files dataPathSuggestion
 
-selectField :: MonadWidget t m => T.Text -> Integer -> Map.Map Integer T.Text -> m (Dropdown t Integer)
+selectField :: (Eq a, MonadWidget t m) => T.Text -> a -> [(Integer, a, T.Text)] -> m (Dropdown t Integer)
 selectField label initialValue options = 
   elClass "div" "field" $ do
     elClass "label" "label" $ do
       text label
       elClass "div" "control is-expanded" $ do
         elClass "div" "select is-fullwidth" $ do
-          dropdown initialValue (constDyn options) $ def
+          dropdown (getIndexFromValue options initialValue) (constDyn . getReflexDropdownOptions $ options) $ def
 
 textField :: MonadWidget t m => T.Text -> T.Text -> m (TextInput t)
 textField label initialValue = 

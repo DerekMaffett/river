@@ -13,7 +13,7 @@ class ContainsLogger a where
 
 data LoggerContext = LoggerContext String
 instance ContainsLogger LoggerContext where
-  getLoggerFromContext (LoggerContext logger) = logger
+    getLoggerFromContext (LoggerContext logger) = logger
 
 type Program = Reader.ReaderT Config IO
 
@@ -26,10 +26,10 @@ ask = Reader.ask
 data BasicAuthCredentials = BasicAuthCredentials String String
 
 instance A.FromJSON BasicAuthCredentials where
-  parseJSON = withObject "object" $ \o -> do
-    username <- o .: "username"
-    password <- o .: "password"
-    return $ BasicAuthCredentials username password
+    parseJSON = withObject "object" $ \o -> do
+        username <- o .: "username"
+        password <- o .: "password"
+        return $ BasicAuthCredentials username password
 
 data ProjectManager = Jira JiraConfig
 
@@ -66,7 +66,7 @@ data Config = Config
   , bugCategories :: [String]
   }
 instance ContainsLogger Config where
-  getLoggerFromContext (Config { logger }) = logger
+    getLoggerFromContext (Config { logger }) = logger
 
 -- Structure of config files
 
@@ -76,18 +76,18 @@ data DataPathSuggestion = DataPathSuggestion
   , path :: [T.Text]
   }
 
-data RepoManagerType = BitbucketManager | GithubManager deriving (Show)
+data RepoManagerType = BitbucketManager | GithubManager deriving (Show, Eq)
 instance FromJSON RepoManagerType where
-  parseJSON = withText "string" $ \s -> case s of
-                                          "bitbucket" -> return BitbucketManager
-                                          "github" -> return GithubManager
-                                          otherKey -> fail $ show otherKey <> " is not a permitted key"
+    parseJSON = withText "string" $ \s -> case s of
+        "bitbucket" -> return BitbucketManager
+        "github"    -> return GithubManager
+        otherKey    -> fail $ show otherKey <> " is not a permitted key"
 
-data ProjectManagerType = JiraManager deriving (Show)
+data ProjectManagerType = JiraManager deriving (Show, Eq)
 instance FromJSON ProjectManagerType where
-  parseJSON = withText "string" $ \s -> case s of
-                                          "jira" -> return JiraManager
-                                          otherKey -> fail $ show otherKey <> " is not a permitted key"
+    parseJSON = withText "string" $ \s -> case s of
+        "jira"   -> return JiraManager
+        otherKey -> fail $ show otherKey <> " is not a permitted key"
 
 dataSuggestion :: ConfigFile -> T.Text -> DataPathSuggestion
 dataSuggestion configFile path =
@@ -194,12 +194,12 @@ readConfig logger = do
                 repoOrg          <- getField bitbucketRepoOrgF
                 defaultReviewers <- getField bitbucketDefaultReviewersF
                 auth <- getAuth bitbucketUsernameF bitbucketPasswordF
-                return $ Bitbucket $ BitbucketConfig {..}
+                return $ Bitbucket $ BitbucketConfig { .. }
             GithubManager -> do
                 repoName <- getField githubRepoNameF
                 repoOrg  <- getField githubRepoOrgF
                 auth     <- getAuth githubUsernameF githubPasswordF
-                return $ Github $ GithubConfig {..}
+                return $ Github $ GithubConfig { .. }
         projectManagerType <- getField projectManagerTypeF
         projectManager     <- case projectManagerType of
             JiraManager -> do
@@ -209,8 +209,8 @@ readConfig logger = do
                 onPRCreation <- getField jiraOnPRCreationF
                 onMerge      <- getField jiraOnMergeF
                 auth         <- getAuth jiraUsernameF jiraPasswordF
-                return $ Jira $ JiraConfig {..}
+                return $ Jira $ JiraConfig { .. }
         workingBranch <- getField workingBranchF
         remoteOrigin  <- getField remoteOriginNameF
         bugCategories <- getField bugCategoriesF
-        return $ Config {..}
+        return $ Config { .. }
