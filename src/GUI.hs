@@ -3,46 +3,61 @@ module GUI where
 import Reflex.Dom
 import Data.FileEmbed
 import Data.Maybe
+import Data.Either
 import qualified Data.Text as T
 import           Control.Monad.IO.Class
 import qualified Config
 import qualified Data.Map as Map
+import qualified Data.Aeson as A
 
 getConfigFromGUI forceRebuild = do
   files <- Config.getConfigFiles
-  let maybeWorkingBranch = fromEither $ Config.parseConfig files Config.workingBranchF
-  mainWidgetWithCss css $ bodyElement maybeWorkingBranch
+  mainWidgetWithCss css $ bodyElement files
   return $ Config.Config {}
 
 
 css = $(embedFile "src/init.css")
 
-fromEither = either (const Nothing) Just
-toString = T.pack . fromMaybe "jk"
-
-bodyElement :: MonadWidget t m => Maybe String -> m ()
-bodyElement wb = do
+bodyElement :: MonadWidget t m => (Maybe A.Object, Maybe A.Object) -> m ()
+bodyElement configFiles = do
+    let 
+      getField = getFieldFromConfigFiles configFiles
+      repoManagerOptions = Map.fromList[(1, "Github"), (2, "Bitbucket")]
+      convertRepoManagerType = \case
+        Config.GithubManager -> 1 
+        Config.BitbucketManager -> 2
+      repoManagerType = convertRepoManagerType $ getField Config.GithubManager Config.repoManagerTypeF
+                                       
     elClass "section" "section" $ do
       elClass "div" "container columns" $ do
         elClass "div" "column is-half is-offset-one-quarter" $ do
           elClass "h1" "title" $ text "River project settings"
-          ddi <- elClass "div" "field" $ do
-            elClass "label" "label" $ do
-              text "Repo Manager"
-              elClass "div" "control is-expanded" $ do
-                elClass "div" "select is-fullwidth" $ do
-                  let options = constDyn $ Map.fromList[(1, "github"), (2, "bitbucket")]
-                  dropdown 1 options $ def
-                    & attributes .~ constDyn ("class" =: "input")
-
-          ti <- elClass "div" "field" $ do
-            elClass "label" "label" $ do
-              text "Working Branch"
-              elClass "div" "control" $ do
-                textInput $ def 
-                  & textInputConfig_initialValue .~ (toString wb)
-                  & attributes .~ constDyn ("class" =: "input")
+          ddi <- selectField "Repo Manager" repoManagerType repoManagerOptions
+          ti <- textField "Working Branch" (getFieldFromConfigFiles configFiles "" Config.workingBranchF)
           eClick <- button "submit"
-          let eFormSubmit = tagPromptlyDyn (value ti) eClick
-          performEvent_ (ffor eFormSubmit $ \val -> liftIO . putStrLn . T.unpack $ val)
+          let eFormSubmit = tagPromptlyDyn (value ddi) eClick
+          performEvent_ (ffor eFormSubmit $ \val -> liftIO . putStrLn . show $ val)
     return ()
+
+getFieldFromConfigFiles :: (A.FromJSON a) => (Maybe A.Object, Maybe A.Object) -> a -> Config.DataPathSuggestion -> a
+getFieldFromConfigFiles files defaultValue dataPathSuggestion = 
+  fromRight defaultValue $ Config.parseConfig files dataPathSuggestion
+
+selectField :: MonadWidget t m => T.Text -> Integer -> Map.Map Integer T.Text -> m (Dropdown t Integer)
+selectField label initialValue options = 
+  elClass "div" "field" $ do
+    elClass "label" "label" $ do
+      text label
+      elClass "div" "control is-expanded" $ do
+        elClass "div" "select is-fullwidth" $ do
+          dropdown initialValue (constDyn options) $ def
+
+textField :: MonadWidget t m => T.Text -> T.Text -> m (TextInput t)
+textField label initialValue = 
+  elClass "div" "field" $ do
+    elClass "label" "label" $ do
+      text label
+      elClass "div" "control" $ do
+        textInput $ def 
+          & textInputConfig_initialValue .~ initialValue
+          & attributes .~ constDyn ("class" =: "input")
