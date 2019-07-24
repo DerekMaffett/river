@@ -5,6 +5,7 @@ import Data.FileEmbed
 import Data.Maybe
 import Data.Either
 import Data.List
+import Data.Functor
 import qualified Data.Text as T
 import           Control.Monad.IO.Class
 import qualified Config
@@ -43,11 +44,21 @@ bodyElement configFiles = do
         elClass "div" "column is-half is-offset-one-quarter" $ do
           elClass "h1" "title" $ text "River project settings"
           ddi <- selectField "Repo Manager" repoManagerType repoManagerOptions
+          dRepoManager :: Dynamic t (Maybe Config.RepoManager) <- widgetHold (return $ constDyn Nothing) (repoManagerSettingsWidget <$> (getValueFromIndex repoManagerOptions) <$> _dropdown_change ddi)
           ti <- textField "Working Branch" (getFieldFromConfigFiles configFiles "" Config.workingBranchF)
           eClick <- button "submit"
           let eFormSubmit = tagPromptlyDyn (dropdownValue repoManagerOptions ddi) eClick
           performEvent_ (ffor eFormSubmit $ \val -> liftIO . putStrLn . show $ val)
     return ()
+
+repoManagerSettingsWidget :: MonadWidget t m => Config.RepoManagerType -> m (Dynamic t (Maybe Config.RepoManager))
+repoManagerSettingsWidget a = do
+  let updateRepoManager old new = Nothing
+  dRepoManager :: Dynamic t (Maybe Config.RepoManager) <- foldDyn updateRepoManager Nothing never
+  return dRepoManager
+-- repoManagerSettingsWidget = \case
+--   Config.GithubManager -> text "github"
+--   Config.BitbucketManager -> text "bitv"
 
 getFieldFromConfigFiles :: (A.FromJSON a) => (Maybe A.Object, Maybe A.Object) -> a -> Config.DataPathSuggestion -> a
 getFieldFromConfigFiles files defaultValue dataPathSuggestion = 
