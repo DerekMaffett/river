@@ -15,12 +15,7 @@
         "type": "git",
         "url": "git@github.com:DerekMaffett/river.git"
     },
-    "keywords": [
-        "workflow",
-        "jira",
-        "bitbucket",
-        "github"
-    ],
+    "keywords": ["workflow", "jira", "bitbucket", "github"],
     "author": "Derek Maffett",
     "license": "MIT"
 }
