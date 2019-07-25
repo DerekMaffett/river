@@ -62,14 +62,16 @@ bodyElement configFiles = do
                                    repoManagerType
                                    repoManagerOptions
                 let dRepoManagerType = dropdownValue repoManagerOptions ddi
-                    dynamicRepoSettingsWidget =
-                        updated
-                            $   repoManagerSettingsWidget configFiles
+                    dRepoManager =
+                        repoManagerSettingsWidget configFiles
                             <$> dRepoManagerType
+                    eRepoManagerChange = updated dRepoManager
                 dRepoManager :: Dynamic t (Maybe Config.RepoManager) <- do
                     nestedD <- widgetHold
-                        (blank >> return $ constDyn (Nothing))
-                        dynamicRepoSettingsWidget
+                        (repoManagerSettingsWidget configFiles
+                                                   Config.GithubManager
+                        )
+                        eRepoManagerChange
                     return $ join nestedD
                 ti <- textField
                     "Working Branch"
