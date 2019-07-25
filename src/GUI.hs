@@ -1,5 +1,6 @@
 module GUI where
 
+import           Control.Monad                  ( join )
 import           Reflex.Dom
 import           Data.FileEmbed
 import           Data.Maybe
@@ -60,13 +61,16 @@ bodyElement configFiles = do
                 ddi <- selectField "Repo Manager"
                                    repoManagerType
                                    repoManagerOptions
-                dRepoManager :: Dynamic t (Maybe Config.RepoManager) <-
-                    widgetHold
-                        (return $ constDyn Nothing)
-                        (   repoManagerSettingsWidget
-                        <$> (getValueFromIndex repoManagerOptions)
-                        <$> _dropdown_change ddi
-                        )
+                let dRepoManagerType = dropdownValue repoManagerOptions ddi
+                    dynamicRepoSettingsWidget =
+                        updated
+                            $   repoManagerSettingsWidget configFiles
+                            <$> dRepoManagerType
+                dRepoManager :: Dynamic t (Maybe Config.RepoManager) <- do
+                    nestedD <- widgetHold
+                        (blank >> return $ constDyn (Nothing))
+                        dynamicRepoSettingsWidget
+                    return $ join nestedD
                 ti <- textField
                     "Working Branch"
                     (getFieldFromConfigFiles configFiles
@@ -74,28 +78,73 @@ bodyElement configFiles = do
                                              Config.workingBranchF
                     )
                 eClick <- button "submit"
-                let
-                    eFormSubmit = tagPromptlyDyn
-                        (dropdownValue repoManagerOptions ddi)
-                        eClick
+                let eFormSubmit = tagPromptlyDyn dRepoManager eClick
                 performEvent_
                     (ffor eFormSubmit $ \val -> liftIO . putStrLn . show $ val)
     return ()
 
+-- repoManagerSettingsWidget a = do
+    -- let updateRepoManager old new = Nothing
+    -- dRepoManager :: Dynamic t (Maybe Config.RepoManager) <- foldDyn
+    --     updateRepoManager
+    --     Nothing
+    --     never
+    -- return dRepoManager
 repoManagerSettingsWidget
     :: MonadWidget t m
-    => Config.RepoManagerType
+    => (Maybe A.Object, Maybe A.Object)
+    -> Config.RepoManagerType
     -> m (Dynamic t (Maybe Config.RepoManager))
-repoManagerSettingsWidget a = do
-    let updateRepoManager old new = Nothing
-    dRepoManager :: Dynamic t (Maybe Config.RepoManager) <- foldDyn
-        updateRepoManager
-        Nothing
-        never
-    return dRepoManager
--- repoManagerSettingsWidget = \case
---   Config.GithubManager -> text "github"
---   Config.BitbucketManager -> text "bitv"
+repoManagerSettingsWidget configFiles = \case
+    Config.GithubManager -> do
+        repoNameInput <- textField
+            "Repo Name"
+            (getFieldFromConfigFiles configFiles "" Config.githubRepoNameF)
+        repoOrgInput <- textField
+            "Repo Organization"
+            (getFieldFromConfigFiles configFiles "" Config.githubRepoOrgF)
+        usernameInput <- textField
+            "Github Username"
+            (getFieldFromConfigFiles configFiles "" Config.githubUsernameF)
+        passwordInput <- textField
+            "Github API Token"
+            (getFieldFromConfigFiles configFiles "" Config.githubPasswordF)
+        let dAuth =
+                Config.BasicAuthCredentials
+                    <$> (T.unpack <$> value usernameInput)
+                    <*> (T.unpack <$> value passwordInput)
+            dGithubConfig =
+                Config.GithubConfig
+                    <$> (T.unpack <$> value repoNameInput)
+                    <*> (T.unpack <$> value repoOrgInput)
+                    <*> dAuth
+            dRepoManager = Just <$> (Config.Github <$> dGithubConfig)
+        return $ dRepoManager
+    Config.BitbucketManager -> do
+        repoNameInput <- textField
+            "Repo Name"
+            (getFieldFromConfigFiles configFiles "" Config.bitbucketRepoNameF)
+        repoOrgInput <- textField
+            "Repo Organization"
+            (getFieldFromConfigFiles configFiles "" Config.bitbucketRepoOrgF)
+        usernameInput <- textField
+            "Bitbucket Username"
+            (getFieldFromConfigFiles configFiles "" Config.bitbucketUsernameF)
+        passwordInput <- textField
+            "Bitbucket App Password"
+            (getFieldFromConfigFiles configFiles "" Config.bitbucketPasswordF)
+        let dAuth =
+                Config.BasicAuthCredentials
+                    <$> (T.unpack <$> value usernameInput)
+                    <*> (T.unpack <$> value passwordInput)
+            dBitbucketConfig =
+                Config.BitbucketConfig
+                    <$> (T.unpack <$> value repoNameInput)
+                    <*> (T.unpack <$> value repoOrgInput)
+                    <*> constDyn []
+                    <*> dAuth
+            dRepoManager = Just <$> (Config.Bitbucket <$> dBitbucketConfig)
+        return $ dRepoManager
 
 getFieldFromConfigFiles
     :: (A.FromJSON a)
@@ -131,4 +180,4 @@ textField label initialValue = elClass "div" "field" $ do
                 &  textInputConfig_initialValue
                 .~ initialValue
                 &  attributes
-                .~ constDyn ("class" =: "input")
+                .~ constDyn ("class" =: "input" <> "autocapitalize" =: "off")

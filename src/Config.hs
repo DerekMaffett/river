@@ -23,7 +23,7 @@ liftIO = Reader.liftIO
 ask :: Program Config
 ask = Reader.ask
 
-data BasicAuthCredentials = BasicAuthCredentials String String
+data BasicAuthCredentials = BasicAuthCredentials String String deriving (Show)
 
 instance A.FromJSON BasicAuthCredentials where
     parseJSON = withObject "object" $ \o -> do
@@ -31,7 +31,7 @@ instance A.FromJSON BasicAuthCredentials where
         password <- o .: "password"
         return $ BasicAuthCredentials username password
 
-data ProjectManager = Jira JiraConfig
+data ProjectManager = Jira JiraConfig deriving (Show)
 
 data JiraConfig = JiraConfig
   { projectKey :: String
@@ -40,22 +40,22 @@ data JiraConfig = JiraConfig
   , onPRCreation :: Maybe String
   , onMerge :: String
   , auth :: BasicAuthCredentials
-  }
+  } deriving (Show)
 
-data RepoManager = Bitbucket BitbucketConfig | Github GithubConfig
+data RepoManager = Bitbucket BitbucketConfig | Github GithubConfig deriving (Show)
 
 data GithubConfig = GithubConfig
   { repoName :: String
   , repoOrg :: String
   , auth :: BasicAuthCredentials
-  }
+  } deriving (Show)
 
 data BitbucketConfig = BitbucketConfig
   { repoName :: String
   , repoOrg :: String
   , defaultReviewers :: [Types.BitbucketUser]
   , auth :: BasicAuthCredentials
-  }
+  } deriving (Show)
 
 data Config = Config
   { logger :: String
