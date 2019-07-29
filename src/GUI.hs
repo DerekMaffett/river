@@ -45,58 +45,62 @@ dropdownValue options ddropdown =
 
 bodyElement :: MonadWidget t m => (Maybe A.Object, Maybe A.Object) -> m ()
 bodyElement configFiles = do
-    let getField           = getFieldFromConfigFiles configFiles
-
-
-        repoManagerOptions = createDropdownOptions
+    let repoManagerOptions = createDropdownOptions
             [ (Config.GithubManager   , "Github")
             , (Config.BitbucketManager, "Bitbucket")
             ]
-        repoManagerType = getField Config.GithubManager Config.repoManagerTypeF
+        repoManagerType = getFieldFromConfigFiles configFiles
+                                                  Config.GithubManager
+                                                  Config.repoManagerTypeF
+        projectManagerOptions =
+            createDropdownOptions [(Config.JiraManager, "Jira")]
+        projectManagerType = getFieldFromConfigFiles
+            configFiles
+            Config.JiraManager
+            Config.projectManagerTypeF
 
     elClass "section" "section" $ do
         elClass "div" "container columns" $ do
             elClass "div" "column is-half is-offset-one-quarter" $ do
                 elClass "h1" "title" $ text "River project settings"
-                ddi <- selectField "Repo Manager"
-                                   repoManagerType
-                                   repoManagerOptions
-                let dRepoManagerType = dropdownValue repoManagerOptions ddi
-                    dRepoManager =
-                        repoManagerSettingsWidget configFiles
-                            <$> dRepoManagerType
-                    eRepoManagerChange = updated dRepoManager
-                dRepoManager :: Dynamic t (Maybe Config.RepoManager) <- do
-                    nestedD <- widgetHold
-                        (repoManagerSettingsWidget configFiles
-                                                   Config.GithubManager
-                        )
-                        eRepoManagerChange
-                    return $ join nestedD
-                ti <- textField
-                    "Working Branch"
-                    (getFieldFromConfigFiles configFiles
-                                             ""
-                                             Config.workingBranchF
-                    )
-                eClick <- button "submit"
+                let workingBranch = getFieldFromConfigFiles
+                        configFiles
+                        ""
+                        Config.workingBranchF
+                    remoteOrigin = getFieldFromConfigFiles
+                        configFiles
+                        "origin"
+                        Config.remoteOriginNameF
+                dRepoManagerType <-
+                    dropdownValue repoManagerOptions
+                        <$> selectField "Repo Manager"
+                                        repoManagerType
+                                        repoManagerOptions
+
+                dRepoManager :: Dynamic t Config.RepoManager <- widgetFold
+                    (repoManagerSettingsWidget configFiles)
+                    repoManagerType
+                    (updated dRepoManagerType)
+
+                ti            <- textField "Working Branch" workingBranch
+                dRemoteOrigin <- textField "Git Remote Name" remoteOrigin
+
+                eClick        <- button "submit"
+
                 let eFormSubmit = tagPromptlyDyn dRepoManager eClick
                 performEvent_
                     (ffor eFormSubmit $ \val -> liftIO . putStrLn . show $ val)
     return ()
 
--- repoManagerSettingsWidget a = do
-    -- let updateRepoManager old new = Nothing
-    -- dRepoManager :: Dynamic t (Maybe Config.RepoManager) <- foldDyn
-    --     updateRepoManager
-    --     Nothing
-    --     never
-    -- return dRepoManager
+widgetFold foldFn init event = do
+    nestedD <- widgetHold (foldFn init) (foldFn <$> event)
+    return $ join nestedD
+
 repoManagerSettingsWidget
     :: MonadWidget t m
     => (Maybe A.Object, Maybe A.Object)
     -> Config.RepoManagerType
-    -> m (Dynamic t (Maybe Config.RepoManager))
+    -> m (Dynamic t Config.RepoManager)
 repoManagerSettingsWidget configFiles = \case
     Config.GithubManager -> do
         repoNameInput <- textField
@@ -120,7 +124,7 @@ repoManagerSettingsWidget configFiles = \case
                     <$> (T.unpack <$> value repoNameInput)
                     <*> (T.unpack <$> value repoOrgInput)
                     <*> dAuth
-            dRepoManager = Just <$> (Config.Github <$> dGithubConfig)
+            dRepoManager = Config.Github <$> dGithubConfig
         return $ dRepoManager
     Config.BitbucketManager -> do
         repoNameInput <- textField
@@ -145,7 +149,7 @@ repoManagerSettingsWidget configFiles = \case
                     <*> (T.unpack <$> value repoOrgInput)
                     <*> constDyn []
                     <*> dAuth
-            dRepoManager = Just <$> (Config.Bitbucket <$> dBitbucketConfig)
+            dRepoManager = Config.Bitbucket <$> dBitbucketConfig
         return $ dRepoManager
 
 getFieldFromConfigFiles
