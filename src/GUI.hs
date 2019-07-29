@@ -65,7 +65,7 @@ bodyElement configFiles = do
                 elClass "h1" "title" $ text "River project settings"
                 let workingBranch = getFieldFromConfigFiles
                         configFiles
-                        ""
+                        "master"
                         Config.workingBranchF
                     remoteOrigin = getFieldFromConfigFiles
                         configFiles
@@ -76,11 +76,20 @@ bodyElement configFiles = do
                         <$> selectField "Repo Manager"
                                         repoManagerType
                                         repoManagerOptions
-
                 dRepoManager :: Dynamic t Config.RepoManager <- widgetFold
                     (repoManagerSettingsWidget configFiles)
                     repoManagerType
                     (updated dRepoManagerType)
+
+                dProjectManagerType <-
+                    dropdownValue projectManagerOptions
+                        <$> selectField "Project Manager"
+                                        projectManagerType
+                                        projectManagerOptions
+                dProjectManager :: Dynamic t Config.ProjectManager <- widgetFold
+                    (projectManagerSettingsWidget configFiles)
+                    projectManagerType
+                    (updated dProjectManagerType)
 
                 ti            <- textField "Working Branch" workingBranch
                 dRemoteOrigin <- textField "Git Remote Name" remoteOrigin
@@ -150,6 +159,43 @@ repoManagerSettingsWidget configFiles = \case
                     <*> constDyn []
                     <*> dAuth
             dRepoManager = Config.Bitbucket <$> dBitbucketConfig
+        return $ dRepoManager
+
+projectManagerSettingsWidget
+    :: MonadWidget t m
+    => (Maybe A.Object, Maybe A.Object)
+    -> Config.ProjectManagerType
+    -> m (Dynamic t Config.ProjectManager)
+projectManagerSettingsWidget configFiles = \case
+    Config.JiraManager -> do
+        jiraProjectKey <- textField
+            "Project Key"
+            (getFieldFromConfigFiles configFiles "" Config.jiraProjectKeyF)
+        jiraDomainName <- textField
+            "Jira Domain Name"
+            (getFieldFromConfigFiles configFiles "" Config.jiraDomainNameF)
+        usernameInput <- textField
+            "Jira Account Email"
+            (getFieldFromConfigFiles configFiles "" Config.jiraUsernameF)
+        passwordInput <- textField
+            "Jira API Token"
+            (getFieldFromConfigFiles configFiles "" Config.jiraPasswordF)
+        let dAuth =
+                Config.BasicAuthCredentials
+                    <$> (T.unpack <$> value usernameInput)
+                    <*> (T.unpack <$> value passwordInput)
+            dOnStart      = constDyn "placeholder"
+            dOnPRCreation = constDyn $ Just "placeholder"
+            dOnMerge      = constDyn "placeholder"
+            dGithubConfig =
+                Config.JiraConfig
+                    <$> (T.unpack <$> value jiraProjectKey)
+                    <*> (T.unpack <$> value jiraDomainName)
+                    <*> (dOnStart)
+                    <*> (dOnPRCreation)
+                    <*> (dOnMerge)
+                    <*> dAuth
+            dRepoManager = Config.Jira <$> dGithubConfig
         return $ dRepoManager
 
 getFieldFromConfigFiles
