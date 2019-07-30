@@ -8,12 +8,8 @@ import qualified GUI
 import qualified Api.Jira                      as Jira
 import qualified Api.Bitbucket                 as Bitbucket
 import qualified Types
-import qualified Utils
 import qualified Data.Text                     as T
 import qualified Config
-import qualified Data.Aeson.Encode.Pretty      as Pretty
-import qualified Data.HashMap.Strict           as HM
-import qualified Data.ByteString.Lazy          as B
 import qualified Data.Aeson                    as A
 import qualified System.IO                     as System
 import qualified System.Directory              as Dir
@@ -25,7 +21,7 @@ initializeApplication
 initializeApplication useGUI forceRebuild = do
     config <- getConfig
     undefined
-    Reader.liftIO $ writeToConfigFiles config
+    Reader.liftIO $ Config.writeToConfigFiles config
     addEnvFileToGitignore
     Logger.logNotice "Config files written"
   where
@@ -250,100 +246,3 @@ getTransitionName' jiraConfig queryFn reasonForTransition prompt = do
                         . Types.transitions
                         $ issue
             queryFn prompt transitionNames
-
-field
-    :: (A.ToJSON a)
-    => Config.DataPathSuggestion
-    -> a
-    -> (Config.DataPathSuggestion, Utils.Writeable)
-field path content = (path, Utils.MkWriteable content)
-
-writeToConfigFiles :: Config.Config -> IO ()
-writeToConfigFiles config = do
-    B.writeFile ".river.json"
-        $ Pretty.encodePretty' aesonPrettyConfig
-        $ A.Object mainConfigFile
-    B.writeFile ".river.env.json"
-        $ Pretty.encodePretty' aesonPrettyConfig
-        $ A.Object envFile
-  where
-    (mainConfigFile, envFile) =
-        foldl setFieldWithData (HM.empty, HM.empty) fields
-    setFieldWithData (mainConfig, envConfig) (dataPathSuggestion, content) =
-        case Config.file dataPathSuggestion of
-            Config.River ->
-                ( Utils.setAtPath (Config.path dataPathSuggestion)
-                                  mainConfig
-                                  content
-                , envConfig
-                )
-            Config.RiverEnv ->
-                ( mainConfig
-                , Utils.setAtPath (Config.path dataPathSuggestion)
-                                  envConfig
-                                  content
-                )
-    fields :: [(Config.DataPathSuggestion, Utils.Writeable)]
-    fields            = repoManagerFields <> projectManagerFields <> baseFields
-    repoManagerFields = case Config.repoManager config of
-        Config.Bitbucket bitbucketConfig ->
-            [field Config.repoManagerTypeF ("bitbucket" :: T.Text)]
-                <> bitbucketFields bitbucketConfig
-        Config.Github githubConfig ->
-            [field Config.repoManagerTypeF ("github" :: T.Text)]
-                <> githubFields githubConfig
-    projectManagerFields = case Config.projectManager config of
-        Config.Jira jiraConfig ->
-            [field Config.projectManagerTypeF ("jira" :: T.Text)]
-                <> jiraFields jiraConfig
-    githubFields (Config.GithubConfig {..}) =
-        [ field Config.githubRepoNameF repoName
-        , field Config.githubRepoOrgF  repoOrg
-        , field Config.githubUsernameF $ getUsername auth
-        , field Config.githubPasswordF $ getPassword auth
-        ]
-    bitbucketFields (Config.BitbucketConfig {..}) =
-        [ field Config.bitbucketRepoNameF         repoName
-        , field Config.bitbucketRepoOrgF          repoOrg
-        , field Config.bitbucketDefaultReviewersF defaultReviewers
-        , field Config.bitbucketUsernameF $ getUsername auth
-        , field Config.bitbucketPasswordF $ getPassword auth
-        ]
-    jiraFields (Config.JiraConfig {..}) =
-        [ field Config.jiraProjectKeyF   projectKey
-        , field Config.jiraDomainNameF   domainName
-        , field Config.jiraOnStartF      onStart
-        , field Config.jiraOnPRCreationF onPRCreation
-        , field Config.jiraOnMergeF      onMerge
-        , field Config.jiraUsernameF $ getUsername auth
-        , field Config.jiraPasswordF $ getPassword auth
-        ]
-    baseFields =
-        [ field Config.workingBranchF $ Config.workingBranch config
-        , field Config.remoteOriginNameF $ Config.remoteOrigin config
-        , field Config.bugCategoriesF $ Config.bugCategories config
-        ]
-    getUsername (Config.BasicAuthCredentials username _) = username
-    getPassword (Config.BasicAuthCredentials _ password) = password
-
-aesonPrettyConfig :: Pretty.Config
-aesonPrettyConfig = Pretty.Config
-    { confIndent          = Pretty.Spaces 4
-    , confCompare         = Pretty.keyOrder
-                                [ "workingBranch"
-                                , "bugCategories"
-                                , "repoManager"
-                                , "projectManager"
-                                , "name"
-                                , "settings"
-                                , "repoName"
-                                , "repoOrg"
-                                , "defaultReviewers"
-                                , "projectKey"
-                                , "domainName"
-                                , "username"
-                                , "password"
-                                ]
-    , confNumFormat       = Pretty.Generic
-    , confTrailingNewline = False
-    }

@@ -3,9 +3,13 @@ module Config where
 import qualified Types
 import qualified Control.Monad.Reader          as Reader
 import           Control.Monad
+import qualified Data.ByteString.Lazy          as B
+import qualified Data.HashMap.Strict           as HM
+import qualified Utils
 import qualified Data.Text                     as T
 import           Data.Aeson                    as A
 import qualified Data.Aeson.Types              as AT
+import qualified Data.Aeson.Encode.Pretty      as Pretty
 import qualified System.Directory              as Dir
 
 class ContainsLogger a where
@@ -64,7 +68,8 @@ data Config = Config
   , workingBranch :: String
   , remoteOrigin :: String
   , bugCategories :: [String]
-  }
+  } deriving (Show)
+
 instance ContainsLogger Config where
     getLoggerFromContext (Config { logger }) = logger
 
@@ -175,7 +180,7 @@ getRawFileContent fileName = do
     fileExists <- Dir.doesFileExist fileName
     if fileExists then A.decodeFileStrict' fileName else return Nothing
 
--- Reading parsing normally configured files
+-- Parsing normally configured files
 
 readConfig :: String -> IO (Either String Config.Config)
 readConfig logger = do
@@ -214,3 +219,94 @@ readConfig logger = do
         remoteOrigin  <- getField remoteOriginNameF
         bugCategories <- getField bugCategoriesF
         return $ Config { .. }
+
+field
+    :: (A.ToJSON a)
+    => Config.DataPathSuggestion
+    -> a
+    -> (Config.DataPathSuggestion, Utils.Writeable)
+field path content = (path, Utils.MkWriteable content)
+
+writeToConfigFiles :: Config -> IO ()
+writeToConfigFiles config = do
+    B.writeFile ".river.json"
+        $ Pretty.encodePretty' aesonPrettyConfig
+        $ A.Object mainConfigFile
+    B.writeFile ".river.env.json"
+        $ Pretty.encodePretty' aesonPrettyConfig
+        $ A.Object envFile
+  where
+    (mainConfigFile, envFile) =
+        foldl setFieldWithData (HM.empty, HM.empty) fields
+    setFieldWithData (mainConfig, envConfig) (dataPathSuggestion, content) =
+        case file dataPathSuggestion of
+            River ->
+                ( Utils.setAtPath (path dataPathSuggestion) mainConfig content
+                , envConfig
+                )
+            RiverEnv ->
+                ( mainConfig
+                , Utils.setAtPath (path dataPathSuggestion) envConfig content
+                )
+    fields :: [(DataPathSuggestion, Utils.Writeable)]
+    fields            = repoManagerFields <> projectManagerFields <> baseFields
+    repoManagerFields = case repoManager config of
+        Bitbucket bitbucketConfig ->
+            [field repoManagerTypeF ("bitbucket" :: T.Text)]
+                <> bitbucketFields bitbucketConfig
+        Github githubConfig -> [field repoManagerTypeF ("github" :: T.Text)]
+            <> githubFields githubConfig
+    projectManagerFields = case projectManager config of
+        Jira jiraConfig -> [field projectManagerTypeF ("jira" :: T.Text)]
+            <> jiraFields jiraConfig
+    githubFields (GithubConfig {..}) =
+        [ field githubRepoNameF repoName
+        , field githubRepoOrgF  repoOrg
+        , field githubUsernameF $ getUsername auth
+        , field githubPasswordF $ getPassword auth
+        ]
+    bitbucketFields (BitbucketConfig {..}) =
+        [ field bitbucketRepoNameF         repoName
+        , field bitbucketRepoOrgF          repoOrg
+        , field bitbucketDefaultReviewersF defaultReviewers
+        , field bitbucketUsernameF $ getUsername auth
+        , field bitbucketPasswordF $ getPassword auth
+        ]
+    jiraFields (JiraConfig {..}) =
+        [ field jiraProjectKeyF   projectKey
+        , field jiraDomainNameF   domainName
+        , field jiraOnStartF      onStart
+        , field jiraOnPRCreationF onPRCreation
+        , field jiraOnMergeF      onMerge
+        , field jiraUsernameF $ getUsername auth
+        , field jiraPasswordF $ getPassword auth
+        ]
+    baseFields =
+        [ field workingBranchF $ workingBranch config
+        , field remoteOriginNameF $ remoteOrigin config
+        , field bugCategoriesF $ bugCategories config
+        ]
+    getUsername (BasicAuthCredentials username _) = username
+    getPassword (BasicAuthCredentials _ password) = password
+
+aesonPrettyConfig :: Pretty.Config
+aesonPrettyConfig = Pretty.Config
+    { confIndent          = Pretty.Spaces 4
+    , confCompare         = Pretty.keyOrder
+                                [ "workingBranch"
+                                , "bugCategories"
+                                , "repoManager"
+                                , "projectManager"
+                                , "name"
+                                , "settings"
+                                , "repoName"
+                                , "repoOrg"
+                                , "defaultReviewers"
+                                , "projectKey"
+                                , "domainName"
+                                , "username"
+                                , "password"
+                                ]
+    , confNumFormat       = Pretty.Generic
+    , confTrailingNewline = False
+    }

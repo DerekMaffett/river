@@ -91,12 +91,20 @@ bodyElement configFiles = do
                     projectManagerType
                     (updated dProjectManagerType)
 
-                ti            <- textField "Working Branch" workingBranch
-                dRemoteOrigin <- textField "Git Remote Name" remoteOrigin
+                iWorkingBranch <- textField "Working Branch" workingBranch
+                iRemoteOrigin  <- textField "Git Remote Name" remoteOrigin
+                let dBugCategories = constDyn []
 
-                eClick        <- button "submit"
+                eClick <- button "submit"
 
-                let eFormSubmit = tagPromptlyDyn dRepoManager eClick
+                let dFormState =
+                        Config.Config "logger not needed"
+                            <$> dProjectManager
+                            <*> dRepoManager
+                            <*> (T.unpack <$> value iWorkingBranch)
+                            <*> (T.unpack <$> value iRemoteOrigin)
+                            <*> dBugCategories
+                    eFormSubmit = tagPromptlyDyn dFormState eClick
                 performEvent_
                     (ffor eFormSubmit $ \val -> liftIO . putStrLn . show $ val)
     return ()
