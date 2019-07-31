@@ -106,7 +106,9 @@ bodyElement configFiles = do
                             <*> dBugCategories
                     eFormSubmit = tagPromptlyDyn dFormState eClick
                 performEvent_
-                    (ffor eFormSubmit $ \val -> liftIO . putStrLn . show $ val)
+                    ( ffor eFormSubmit
+                    $ \val -> liftIO . Config.writeToConfigFiles $ val
+                    )
     return ()
 
 widgetFold foldFn init event = do
