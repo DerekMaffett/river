@@ -13,7 +13,7 @@ packages:
     hackage: graphql-0.3@sha256:c83618c374cb00ee0b1f39639d64371a83abec3e7b697469c4e71768db14c676
 snapshots:
 - completed:
-    size: 508409
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/12/22.yaml
-    sha256: 8fda98426baa6dd8fab76ac7d87b12444b15ddbb3e7613988f046566059395c8
-  original: lts-12.22
+    size: 523443
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/14/0.yaml
+    sha256: 283773e7120f5446d961eab35ea95c9af9c24187cc178537bd29273200a05171
+  original: lts-14.0

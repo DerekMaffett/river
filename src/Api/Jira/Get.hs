@@ -24,7 +24,7 @@ getIssue
     -> Reader.ReaderT a IO (Maybe Issue)
 getIssue settings issueKey = do
     issueOrErr <- tryAny $ do
-        runReq def $ do
+        runReq defaultHttpConfig $ do
             response <- req GET
                             url
                             NoReqBody

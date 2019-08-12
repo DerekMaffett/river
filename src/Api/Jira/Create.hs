@@ -21,7 +21,7 @@ data Response = Response
   } deriving (Show, Generic, FromJSON)
 
 createIssue settings summary issueType = do
-    runReq def $ do
+    runReq defaultHttpConfig $ do
         response <- req POST
                         url
                         (ReqBodyJson $ request)

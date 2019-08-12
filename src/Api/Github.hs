@@ -37,13 +37,18 @@ instance FromJSON Permalink where
     parseJSON = withObject "object" $ \o -> do
         errors <- o .:? "errors"
         case (errors) of
-          Nothing -> do
-            permalink <- o .: "data" >>= (.: "createPullRequest") >>= (.: "pullRequest") >>= (.: "permalink")
-            return $ Permalink permalink
-          Just errors -> withArray "array of errors" parseErrorsArray errors
+            Nothing -> do
+                permalink <-
+                    o
+                    .:  "data"
+                    >>= (.: "createPullRequest")
+                    >>= (.: "pullRequest")
+                    >>= (.: "permalink")
+                return $ Permalink permalink
+            Just errors -> withArray "array of errors" parseErrorsArray errors
       where
-          parseError = withObject "object" (.: "message")
-          parseErrorsArray errorsArray = do
+        parseError = withObject "object" (.: "message")
+        parseErrorsArray errorsArray = do
             errorsArray <- mapM parseError (V.toList errorsArray)
             fail $ unlines errorsArray
 
@@ -73,61 +78,59 @@ createPullRequest (GithubConfig { repoOrg, repoName, auth }) issue branchName =
                     ]
                 )
         let
-            createPullRequestQuery (RepoId repoId)
-                = (operationDefinition $ Mutation $ Node
-                      ""
-                      []
-                      []
-                      [ SelectionField $ Field
-                            ""
-                            "createPullRequest"
-                            [ Argument
-                                  "input"
-                                  ( ValueObject
-                                  . ObjectValue
-                                  $ [ ObjectField "baseRefName"
-                                    $ ValueString
-                                    . StringValue
-                                    . T.pack
-                                    $ workingBranch
-                                    , ObjectField "headRefName"
-                                    $ ValueString
-                                    . StringValue
-                                    . T.pack
-                                    $ branchName
-                                    , ObjectField "title"
-                                    $ ValueString
-                                    . StringValue
-                                    . T.pack
-                                    $ branchName
-                                    , ObjectField "repositoryId"
-                                    $ ValueString
-                                    . StringValue
-                                    $ repoId
-                                    , ObjectField "body"
-                                    $ ValueString
-                                    . StringValue
-                                    . T.pack
-                                    $ fromMaybe (Types.summary issue)
-                                                (Types.description issue)
-                                    ]
-                                  )
-                            ]
-                            []
-                            [ SelectionField $ Field
-                                  ""
-                                  "pullRequest"
-                                  []
-                                  []
-                                  [ SelectionField
-                                        $ Field "" "permalink" [] [] []
+            createPullRequestQuery (RepoId repoId) =
+                (operationDefinition $ Mutation $ Node
+                    ""
+                    []
+                    []
+                    [ SelectionField $ Field
+                          ""
+                          "createPullRequest"
+                          [ Argument
+                                "input"
+                                ( ValueObject
+                                . ObjectValue
+                                $ [ ObjectField "baseRefName"
+                                  $ ValueString
+                                  . StringValue
+                                  . T.pack
+                                  $ workingBranch
+                                  , ObjectField "headRefName"
+                                  $ ValueString
+                                  . StringValue
+                                  . T.pack
+                                  $ branchName
+                                  , ObjectField "title"
+                                  $ ValueString
+                                  . StringValue
+                                  . T.pack
+                                  $ branchName
+                                  , ObjectField "repositoryId"
+                                  $ ValueString
+                                  . StringValue
+                                  $ repoId
+                                  , ObjectField "body"
+                                  $ ValueString
+                                  . StringValue
+                                  . T.pack
+                                  $ fromMaybe (Types.summary issue)
+                                              (Types.description issue)
                                   ]
-                            ]
-                      ]
-                  )
+                                )
+                          ]
+                          []
+                          [ SelectionField $ Field
+                                ""
+                                "pullRequest"
+                                []
+                                []
+                                [SelectionField $ Field "" "permalink" [] [] []]
+                          ]
+                    ]
+                )
         let body graphqlQuery = object [("query" .= graphqlQuery)]
         let headers = header (B.pack "User-Agent") (B.pack repoOrg)
-        runReq def $ do
+        runReq defaultHttpConfig $ do
             repoId <- responseBody <$> req
                 POST
                 graphqlUrl
@@ -147,14 +150,22 @@ data PrId = PrId T.Text
 
 instance FromJSON PrId where
     parseJSON = withObject "object" $ \o -> do
-        nodes <- o .: "data" >>= (.: "repository") >>= (.: "pullRequests") >>= (.: "nodes")
+        nodes <-
+            o
+            .:  "data"
+            >>= (.: "repository")
+            >>= (.: "pullRequests")
+            >>= (.: "nodes")
         pullRequest <- withArray "array of pull requests" parseNodes nodes
-        id <- pullRequest .: "id"
+        id          <- pullRequest .: "id"
         return $ PrId id
       where
-          parseNodes nodesArray = case V.length nodesArray of
+        parseNodes nodesArray = case V.length nodesArray of
             1 -> withObject "pull request object" return (V.head nodesArray)
-            n -> fail $ (show n) <> " open pull requests found from the current branch to the working branch. There should be 1."
+            n ->
+                fail
+                    $ (show n)
+                    <> " open pull requests found from the current branch to the working branch. There should be 1."
 
 
 
@@ -165,51 +176,50 @@ mergePullRequest (GithubConfig { repoOrg, repoName, auth }) branchName = do
     let headers     = header (B.pack "User-Agent") (B.pack repoOrg)
     let authOptions = generateAuthOptions auth
     let
-        getRepoWithPrsQuery
-            = (operationDefinition $ Query $ Node
-                  ""
-                  []
-                  []
-                  [ SelectionField $ Field
-                        ""
-                        "repository"
-                        [ Argument
-                            "owner"
-                            (ValueString . StringValue . T.pack $ repoOrg)
-                        , Argument
-                            "name"
-                            (ValueString . StringValue . T.pack $ repoName)
-                        ]
-                        []
-                        [ SelectionField $ Field "" "id" [] [] []
-                        , SelectionField $ Field
-                            ""
-                            "pullRequests"
-                            [ Argument
-                                "baseRefName"
-                                ( ValueString
-                                . StringValue
-                                . T.pack
-                                $ workingBranch
-                                )
-                            , Argument
-                                "headRefName"
-                                (ValueString . StringValue . T.pack $ branchName
-                                )
-                            , Argument "first"  (ValueInt 10)
-                            , Argument "states" (ValueEnum . T.pack $ "OPEN")
-                            ]
-                            []
-                            [ SelectionField $ Field
-                                  ""
-                                  "nodes"
-                                  []
-                                  []
-                                  [SelectionField $ Field "" "id" [] [] []]
-                            ]
-                        ]
-                  ]
-              )
+        getRepoWithPrsQuery =
+            (operationDefinition $ Query $ Node
+                ""
+                []
+                []
+                [ SelectionField $ Field
+                      ""
+                      "repository"
+                      [ Argument
+                          "owner"
+                          (ValueString . StringValue . T.pack $ repoOrg)
+                      , Argument
+                          "name"
+                          (ValueString . StringValue . T.pack $ repoName)
+                      ]
+                      []
+                      [ SelectionField $ Field "" "id" [] [] []
+                      , SelectionField $ Field
+                          ""
+                          "pullRequests"
+                          [ Argument
+                              "baseRefName"
+                              ( ValueString
+                              . StringValue
+                              . T.pack
+                              $ workingBranch
+                              )
+                          , Argument
+                              "headRefName"
+                              (ValueString . StringValue . T.pack $ branchName)
+                          , Argument "first"  (ValueInt 10)
+                          , Argument "states" (ValueEnum . T.pack $ "OPEN")
+                          ]
+                          []
+                          [ SelectionField $ Field
+                                ""
+                                "nodes"
+                                []
+                                []
+                                [SelectionField $ Field "" "id" [] [] []]
+                          ]
+                      ]
+                ]
+            )
     let mergePullRequestQuery (PrId prId) =
             (operationDefinition $ Mutation $ Node
                 ""
@@ -239,7 +249,7 @@ mergePullRequest (GithubConfig { repoOrg, repoName, auth }) branchName = do
                       ]
                 ]
             )
-    runReq def $ do
+    runReq defaultHttpConfig $ do
         prId <- responseBody <$> req
             POST
             graphqlUrl

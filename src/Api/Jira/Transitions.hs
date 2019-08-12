@@ -34,7 +34,7 @@ transitionIssue transitionLabel settings issue = do
                 <> transitionLabel
                 <> "\n\nAvailable transitions: \n"
                 <> (unlines . fmap Types.name . Types.transitions) issue
-        Just transition -> runReq def $ do
+        Just transition -> runReq defaultHttpConfig $ do
             req POST
                 url
                 (ReqBodyJson (Body transition))

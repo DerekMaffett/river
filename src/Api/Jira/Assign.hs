@@ -17,7 +17,7 @@ import qualified Types
 
 assignIssue :: JiraConfig -> String -> Program ()
 assignIssue settings issueKey = do
-    runReq def $ do
+    runReq defaultHttpConfig $ do
         user <-
             responseBody
                 <$> req GET myselfUrl NoReqBody jsonResponse authOptions

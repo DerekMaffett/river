@@ -36,13 +36,14 @@ generateAuthOptions (BasicAuthCredentials username password) =
 data Link = Link String
 
 instance FromJSON Link where
-  parseJSON = withObject "object" $ \o -> Link <$> (o .: "links" >>= (.: "html") >>= (.: "href"))
+    parseJSON = withObject "object"
+        $ \o -> Link <$> (o .: "links" >>= (.: "html") >>= (.: "href"))
 
 createPullRequest :: BitbucketConfig -> Types.Issue -> String -> Program String
 createPullRequest (BitbucketConfig { defaultReviewers, repoName, repoOrg, auth }) issue branchName
     = do
         Config { workingBranch } <- ask
-        runReq def $ do
+        runReq defaultHttpConfig $ do
             user <-
                 responseBody
                     <$> req GET
@@ -78,22 +79,25 @@ createPullRequest (BitbucketConfig { defaultReviewers, repoName, repoOrg, auth }
 data PrId = PrId Integer
 
 instance FromJSON PrId where
-  parseJSON = withObject "object" $ \o -> do
-    entriesArray <- o .: "values"
-    matchingPR <- withArray "paginated entries" parseEntries entriesArray
-    id <- matchingPR .: "id"
-    return $ PrId id
-    where
-      parseEntries entries = case V.length entries of
-        1 -> withObject "pull request object" return (V.head entries)
-        n -> fail $ (show n) <> " open pull requests found from the current branch to the working branch. There should be 1."
+    parseJSON = withObject "object" $ \o -> do
+        entriesArray <- o .: "values"
+        matchingPR   <- withArray "paginated entries" parseEntries entriesArray
+        id           <- matchingPR .: "id"
+        return $ PrId id
+      where
+        parseEntries entries = case V.length entries of
+            1 -> withObject "pull request object" return (V.head entries)
+            n ->
+                fail
+                    $ (show n)
+                    <> " open pull requests found from the current branch to the working branch. There should be 1."
 
 
 mergePullRequest :: BitbucketConfig -> String -> Program ()
 mergePullRequest (BitbucketConfig { defaultReviewers, repoName, repoOrg, auth }) branchName
     = do
         Config { workingBranch } <- ask
-        runReq def $ do
+        runReq defaultHttpConfig $ do
             prId <- responseBody <$> req
                 GET
                 pullRequestsUrl
@@ -127,7 +131,7 @@ mergePullRequest (BitbucketConfig { defaultReviewers, repoName, repoOrg, auth })
 bitbucketQueryArg arg = "\"" <> T.pack arg <> "\""
 
 getSelf auth = do
-    res <- runReq def $ do
+    res <- runReq defaultHttpConfig $ do
         req GET (baseUrl /: "user") NoReqBody jsonResponse authOptions
     return (responseBody res :: Types.BitbucketUser)
     where authOptions = generateAuthOptions auth
