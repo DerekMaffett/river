@@ -1,8 +1,9 @@
-with import <nixpkgs> {};
+(import ./reflex-platform {}).project ({ pkgs, ... }: {
+  packages = {
+    backend = ./backend;
+  };
 
-stdenv.mkDerivation {
-  name = "river";
-  buildInputs = [
-    stack
-  ];
-}
+  shells = {
+    ghc = ["backend"];
+  };
+})

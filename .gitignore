@@ -1,7 +1,4 @@
-.stack-work/
-river.cabal
-.river.env.json
-.river.json
-*~
-.env
-.integration-test-auth.json
+dist-newstyle/
+**/.river.env.json
+**/.river.json
+**/.integration-test-auth.json
