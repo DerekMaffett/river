@@ -5,21 +5,18 @@ where
 
 import           Api.Jira.Base
 import           Data.Aeson
-import           Data.Maybe
 import           Data.Default.Class
-import           Data.Text
 import           GHC.Generics
 import           Network.HTTP.Req
 import           Config
-import qualified Types                          ( IssueType(..)
-                                                , Issue(..)
-                                                )
+import qualified Types                          ( IssueType(..) )
 
 
 data Response = Response
   { key :: String
   } deriving (Show, Generic, FromJSON)
 
+createIssue :: JiraConfig -> String -> Types.IssueType -> Program String
 createIssue settings summary issueType = do
     runReq def $ do
         response <- req POST
