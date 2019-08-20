@@ -70,6 +70,7 @@ executables:
         source-dirs: app
         ghc-options:
             - -threaded
+            - -dynamic
             - -rtsopts
             - -with-rtsopts=-N
             - -Wall
@@ -81,6 +82,7 @@ executables:
         source-dirs: integration-tests
         ghc-options:
             - -threaded
+            - -dynamic
             - -rtsopts
             - -with-rtsopts=-N
         dependencies:
@@ -94,6 +96,7 @@ tests:
         source-dirs: test
         ghc-options:
             - -threaded
+            - -dynamic
             - -rtsopts
             - -with-rtsopts=-N
         dependencies:
