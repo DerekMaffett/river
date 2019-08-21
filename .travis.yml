@@ -1,22 +1,9 @@
-language: generic
-cache:
-    directories:
-        - "$HOME/.stack"
-addons:
-    apt:
-        packages:
-            - libgmp-dev
+language: nix
 os:
     - osx
     - linux
 before_install:
-    - if [ $TRAVIS_OS_NAME = linux ]; then export PATH=$HOME/.local/bin:$PATH; else export PATH=$HOME/Library/Python/2.7/bin:$PATH; fi
     - pip install awscli --upgrade --user
-    - mkdir -p ~/.local/bin
-    - if [ $TRAVIS_OS_NAME = linux ]; then travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz
-      | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'; else travis_retry
-      curl -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar x --strip-components=1
-      -C ~/.local/bin '*/stack'; fi
 install:
     - stack --no-terminal --install-ghc test --only-dependencies
 script:

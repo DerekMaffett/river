@@ -1,6 +1,6 @@
 let
   pkgs = import <nixpkgs> {};
-  app = import ./default.nix;
+  app = import ./reflex.nix;
 in
 pkgs.mkShell {
   name="river";

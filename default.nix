@@ -1,9 +1,4 @@
-(import ./reflex-platform {}).project ({ pkgs, ... }: {
-  packages = {
-    app = ./app;
-  };
-
-  shells = {
-    ghc = ["app"];
-  };
-})
+let 
+  project = import ./reflex.nix;
+in
+  project.ghc.app
