@@ -1,9 +1,9 @@
 (import ./reflex-platform {}).project ({ pkgs, ... }: {
   packages = {
-    backend = ./backend;
+    app = ./app;
   };
 
   shells = {
-    ghc = ["backend"];
+    ghc = ["app"];
   };
 })
