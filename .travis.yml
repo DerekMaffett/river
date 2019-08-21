@@ -6,7 +6,7 @@ before_install:
     - pip install awscli --upgrade --user
 install:
     - git submodule update --init
-    - echo "1" | reflex-platform/try-reflex
+    - echo "1" | reflex-platform/try-reflex || echo "just needed the binary caches..."
 script:
     - nix-build
     - result/bin/river-test
