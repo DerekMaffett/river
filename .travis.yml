@@ -17,7 +17,7 @@ install:
     - git submodule update --init
     - echo "1" | reflex-platform/try-reflex || echo "just needed the binary caches..."
 script:
-    - nix-build -A release.nix
+    - nix-build
     - result/bin/river-test
     # - result/bin/river-integration-tests
     - aws s3 cp result/bin/river s3://river-dist/$TRAVIS_BUILD_NUMBER/$TRAVIS_OS_NAME/river
@@ -25,7 +25,7 @@ jobs:
     include:
         - stage: deploy
           before_install:
-              - nix-env -iA release.nix
+              - nix-env -i -f release.nix
           install:
               - aws s3 mv s3://river-dist/$TRAVIS_BUILD_NUMBER/linux/river ./bin/river-linux
               - aws s3 mv s3://river-dist/$TRAVIS_BUILD_NUMBER/osx/river ./bin/river-osx
