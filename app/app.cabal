@@ -15,7 +15,7 @@ build-type:          Simple
 extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
-executable app
+executable river
   main-is:             Main.hs
   other-modules:
       Api.Bitbucket
