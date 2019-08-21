@@ -5,15 +5,17 @@ os:
 before_install:
     - pip install awscli --upgrade --user
 install:
-    - stack --no-terminal --install-ghc test --only-dependencies
+    - git submodule update --init
+    - reflex-platform/try-reflex
 script:
-    - stack build --copy-bins --test --no-terminal --local-bin-path ./bin --no-haddock-deps
-    - aws s3 mv ./bin/river s3://river-dist/$TRAVIS_BUILD_NUMBER/$TRAVIS_OS_NAME/river
+    - nix-build
+    - result/bin/river-test
+    # - result/bin/river-integration-tests
+    - aws s3 mv result/bin/river s3://river-dist/$TRAVIS_BUILD_NUMBER/$TRAVIS_OS_NAME/river
 jobs:
     include:
         - stage: deploy
           before_install:
-              - if [ $TRAVIS_OS_NAME = linux ]; then export PATH=$HOME/.local/bin:$PATH; else export PATH=$HOME/Library/Python/2.7/bin:$PATH; fi
               - pip install awscli --upgrade --user
           install:
               - aws s3 mv s3://river-dist/$TRAVIS_BUILD_NUMBER/linux/river ./bin/river-linux
