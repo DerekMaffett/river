@@ -1,3 +1,4 @@
+result/
 dist-newstyle/
 **/.river.env.json
 **/.river.json
