@@ -8,7 +8,11 @@ pkgs.mkShell {
     app.shells.ghc
   ];
   buildInputs=[
-    pkgs.fswatch
-    (pkgs.writeScriptBin "watch-dev" "fswatch -r -o -l 0.2 ./app/ | (while read; do cabal new-build all; done)")
+    (pkgs.writeWatchScript {
+      name = "watch";
+      src = "./app";
+      command = "cabal new-build all";
+    })
+    (pkgs.localCabalRun "river")
   ];
 }
