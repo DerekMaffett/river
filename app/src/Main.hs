@@ -1,5 +1,6 @@
 module Main where
 
+import qualified GUI
 import qualified Begin
 import qualified Review
 import qualified Merge
@@ -28,21 +29,17 @@ data MergeOptions = MergeOptions
 data InitOptions = InitOptions
   { useDebugLogger :: Bool
   , forceRebuild :: Bool
-  , useGui :: Bool
   } deriving (Show)
 
 data Options
-  = Begin BeginOptions
+  = Gui
+  | Begin BeginOptions
   | Review ReviewOptions
   | Merge MergeOptions
   | Init InitOptions deriving (Show)
 
 debugModeFlag :: Parser Bool
 debugModeFlag = switch $ long "debug" <> short 'd' <> help "debug mode"
-
-useGuiFlag :: Parser Bool
-useGuiFlag =
-    switch $ long "graphical" <> short 'g' <> help "use graphical interface"
 
 issueKeyOpt :: Parser Begin.IssueSource
 issueKeyOpt =
@@ -66,13 +63,18 @@ quickFixOpt = liftA2 Begin.QuickFix summaryOpt issueTypeOpt
                     "marks quick-fix as a bug, defaults to task"
                 )
 
+guiOpts :: ParserInfo Options
+guiOpts = info optsParser desc
+  where
+    optsParser = pure Gui
+    desc       = fullDesc <> progDesc "Activates the experimental GUI" <> header
+        "Activates the experimental GUI"
+
 initOpts :: ParserInfo Options
 initOpts = info optsParser desc
   where
     optsParser =
-        Init
-            <$>  liftA3 InitOptions debugModeFlag forceRebuildFlag useGuiFlag
-            <**> helper
+        Init <$> liftA2 InitOptions debugModeFlag forceRebuildFlag <**> helper
     forceRebuildFlag = switch $ long "force-rebuild" <> short 'f' <> help
         "force rebuild from scratch"
     desc =
@@ -109,7 +111,8 @@ opts = info optsParser desc
   where
     optsParser =
         subparser
-                (  (command "init" initOpts)
+                (  (command "gui" guiOpts)
+                <> (command "init" initOpts)
                 <> (command "begin" beginOpts)
                 <> (command "pr" reviewOpts)
                 <> (command "merge" mergeOpts)
@@ -126,15 +129,16 @@ main = do
 runProgram :: Options -> IO ()
 runProgram options = do
     case options of
+        Gui -> GUI.startGui
         Begin (BeginOptions { useDebugLogger, issueSource }) ->
             runWithConfigContext useDebugLogger $ Begin.begin issueSource
         Review (ReviewOptions { useDebugLogger }) ->
             runWithConfigContext useDebugLogger $ Review.review
         Merge (MergeOptions { useDebugLogger }) ->
             runWithConfigContext useDebugLogger $ Merge.merge
-        Init (InitOptions { forceRebuild, useDebugLogger, useGui }) ->
+        Init (InitOptions { forceRebuild, useDebugLogger }) ->
             runWithLoggerContext useDebugLogger
-                $ Init.initializeApplication True forceRebuild
+                $ Init.initializeApplication forceRebuild
   where
     runWithConfigContext useDebugLogger program = do
         logger       <- Logger.initializeLogger useDebugLogger

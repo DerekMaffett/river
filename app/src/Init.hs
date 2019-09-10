@@ -16,18 +16,12 @@ import qualified System.Directory              as Dir
 import           Control.Monad
 import qualified Control.Monad.Reader          as Reader
 
-initializeApplication
-    :: Bool -> Bool -> Reader.ReaderT Config.LoggerContext IO ()
-initializeApplication useGUI forceRebuild = do
-    config <- getConfig
-    undefined
+initializeApplication :: Bool -> Reader.ReaderT Config.LoggerContext IO ()
+initializeApplication forceRebuild = do
+    config <- getConfigFromPrompt forceRebuild
     Reader.liftIO $ Config.writeToConfigFiles config
     addEnvFileToGitignore
     Logger.logNotice "Config files written"
-  where
-    getConfig = if useGUI
-        then Reader.liftIO $ GUI.getConfigFromGUI forceRebuild
-        else getConfigFromPrompt forceRebuild
 
 
 addEnvFileToGitignore :: Reader.ReaderT Config.LoggerContext IO ()

@@ -13,10 +13,10 @@ import qualified Config
 import qualified Data.Map                      as Map
 import qualified Data.Aeson                    as A
 
-getConfigFromGUI forceRebuild = do
+startGui = do
     files <- Config.getConfigFiles
     mainWidgetWithCss css $ bodyElement files
-    return $ Config.Config{}
+    return ()
 
 
 css = $(embedFile "src/init.css")
