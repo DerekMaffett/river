@@ -101,16 +101,19 @@ bodyElement configFiles = do
                 iRemoteOrigin  <- textField "Git Remote Name" remoteOrigin
                 let dBugCategories = constDyn []
 
-                eClick <- button "submit"
+                (submitEl, _) <- elClass' "button" "button is-primary" $ do
+                    text "submit"
 
-                let dFormState =
+
+                let eSubmitClick = domEvent Click submitEl
+                    dFormState =
                         Config.Config "logger not needed"
                             <$> dProjectManager
                             <*> dRepoManager
                             <*> (T.unpack <$> value iWorkingBranch)
                             <*> (T.unpack <$> value iRemoteOrigin)
                             <*> dBugCategories
-                    eFormSubmit = tagPromptlyDyn dFormState eClick
+                    eFormSubmit = tagPromptlyDyn dFormState eSubmitClick
                 performEvent_
                     ( ffor eFormSubmit
                     $ \val -> liftIO . Config.writeToConfigFiles $ val
