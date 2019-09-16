@@ -4,3 +4,4 @@ reflex-platform/
 **/.river.env.json
 **/.river.json
 **/.integration-test-auth.json
+.ghc.environment*
