@@ -197,16 +197,17 @@ projectManagerSettingsWidget configFiles = \case
             "Jira API Token"
             (getFieldFromConfigFiles configFiles "" Config.jiraPasswordF)
 
-        dOnStart <- exampleTaskWidget "On Start Transition"
-                                      "Example task ready to be started"
-                                      dJiraConfig
-        dOnPRCreation <- exampleTaskWidget
-            "On PR Creation Transition (optional)"
-            "Example task ready for a PR"
+        dOnStart <- exampleTaskWidget
+            ("Example task ready to be started", "On Start Transition")
             dJiraConfig
-        dOnMerge <- exampleTaskWidget "On Merge Transition"
-                                      "Example task ready for merging"
-                                      dJiraConfig
+        dOnPRCreation <- exampleTaskWidget
+            ( "Example task ready for PR (optional)"
+            , "On PR Creation Transition"
+            )
+            dJiraConfig
+        dOnMerge <- exampleTaskWidget
+            ("Example task ready for merging", "On Merge Transition")
+            dJiraConfig
 
         let dAuth =
                 Config.BasicAuthCredentials
@@ -225,54 +226,48 @@ projectManagerSettingsWidget configFiles = \case
 
 exampleTaskWidget
     :: MonadWidget t m
-    => T.Text
-    -> T.Text
+    => (T.Text, T.Text)
     -> Dynamic t Config.JiraConfig
     -> m (Dynamic t (Maybe String))
-exampleTaskWidget label placeholderText dJiraConfig = do
-    let eOnStartRequest = "hi" <$ never
-    do
-        elClass "label" "label" $ do
-            text label
-            elClass "div" "field has-addons" $ do
-                elClass "div" "control is-expanded" $ do
-                    textInput
-                        $  def
-                        &  textInputConfig_initialValue
-                        .~ ""
-                        &  attributes
-                        .~ constDyn
-                               (  ("placeholder" =: placeholderText)
-                               <> ("class" =: "input")
-                               <> ("autocapitalize" =: "off")
-                               )
-                elClass "div" "control" $ do
-                    elClass "button" "button is-info" $ do
-                        text "search"
-            -- return $ tagPromptlyDyn (T.unpack <$> value onStartExampleInput)
-            --                         eClick
+exampleTaskWidget (exampleLabel, transitionLabel) dJiraConfig = do
+    eExampleTaskSearch <- elClass "label" "label" $ do
+        text exampleLabel
+        elClass "div" "field has-addons" $ do
+            exampleTaskInput <- elClass "div" "control is-expanded" $ do
+                textInput
+                    $  def
+                    &  textInputConfig_initialValue
+                    .~ ""
+                    &  attributes
+                    .~ constDyn
+                           (("class" =: "input") <> ("autocapitalize" =: "off"))
+            (el, _) <- elClass "div" "control" $ do
+                elClass' "button" "button is-info" $ do
+                    text "search"
+            let eClick = domEvent Click el
+            return $ tagPromptlyDyn (T.unpack <$> value exampleTaskInput) eClick
 
-    let eSearchOnStart = attachPromptlyDyn dJiraConfig eOnStartRequest
+    let eExampleTaskWithJiraConfig =
+            attachPromptlyDyn dJiraConfig eExampleTaskSearch
 
     eMaybeIssue <- performEvent
-        (ffor eSearchOnStart $ \(jiraConfig, exampleTicketName) -> liftIO $ do
-            logger <- Logger.initializeLogger False
-            Reader.runReaderT (Jira.getIssue jiraConfig exampleTicketName)
-                              (Config.LoggerContext logger)
+        (ffor eExampleTaskWithJiraConfig $ \(jiraConfig, exampleTicketName) ->
+            liftIO $ do
+                logger <- Logger.initializeLogger False
+                Reader.runReaderT
+                    (Jira.getIssue jiraConfig exampleTicketName)
+                    (Config.LoggerContext logger)
         )
 
     dMaybeOnStartValue :: Dynamic t (Maybe String) <- widgetFold
         (\case
-            Nothing -> do
-                text
-                    "Please input a valid JIRA task reference (example: PSY-32)"
-                return $ constDyn Nothing
+            Nothing    -> return $ constDyn Nothing
             Just issue -> do
                 let options     = mapToDropdownOptions issue
                 let firstOption = getValueFromIndex options 0
                 dOnStartValue <-
                     dropdownValue options
-                        <$> selectField "On Start" firstOption options
+                        <$> selectField transitionLabel firstOption options
                 return $ Just <$> dOnStartValue
         )
         Nothing
