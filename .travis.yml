@@ -29,7 +29,9 @@ jobs:
         - stage: deploy
           os: linux
           before_install:
-              - nix-env -i -f release.nix
+              - curl https://nixos.org/nix/install | sh
+              - . ~/.nix-profile/etc/profile.d/nix.sh
+              - nix-env -i awscli
           install:
               - aws s3 mv s3://river-dist/$TRAVIS_BUILD_NUMBER/linux/river ./bin/river-linux
               - aws s3 mv s3://river-dist/$TRAVIS_BUILD_NUMBER/osx/river ./bin/river-osx
