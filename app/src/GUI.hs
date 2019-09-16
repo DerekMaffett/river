@@ -1,6 +1,7 @@
 module GUI where
 
 import           Control.Monad                  ( join )
+import qualified Control.Monad.Reader          as Reader
 import           Reflex.Dom
 import           Data.FileEmbed
 import           Data.Maybe
@@ -9,9 +10,14 @@ import           Data.List
 import           Data.Functor
 import qualified Data.Text                     as T
 import           Control.Monad.IO.Class
+import           Types                          ( Issue(..)
+                                                , Transition(..)
+                                                )
 import qualified Config
+import qualified Logger
 import qualified Data.Map                      as Map
 import qualified Data.Aeson                    as A
+import qualified Api.Jira.Get                  as Jira
 
 startGui = do
     files <- Config.getConfigFiles
@@ -60,8 +66,8 @@ bodyElement configFiles = do
             Config.projectManagerTypeF
 
     elClass "section" "section" $ do
-        elClass "div" "container columns" $ do
-            elClass "div" "column is-half is-offset-one-quarter" $ do
+        elClass "div" "container columns is-8" $ do
+            elClass "div" "column is-full" $ do
                 elClass "h1" "title" $ text "River project settings"
                 let workingBranch = getFieldFromConfigFiles
                         configFiles
@@ -177,7 +183,7 @@ projectManagerSettingsWidget
     -> Config.ProjectManagerType
     -> m (Dynamic t Config.ProjectManager)
 projectManagerSettingsWidget configFiles = \case
-    Config.JiraManager -> do
+    Config.JiraManager -> mdo
         jiraProjectKey <- textField
             "Project Key"
             (getFieldFromConfigFiles configFiles "" Config.jiraProjectKeyF)
@@ -190,23 +196,94 @@ projectManagerSettingsWidget configFiles = \case
         passwordInput <- textField
             "Jira API Token"
             (getFieldFromConfigFiles configFiles "" Config.jiraPasswordF)
+
+        dOnStart <- exampleTaskWidget "On Start Transition"
+                                      "Example task ready to be started"
+                                      dJiraConfig
+        dOnPRCreation <- exampleTaskWidget
+            "On PR Creation Transition (optional)"
+            "Example task ready for a PR"
+            dJiraConfig
+        dOnMerge <- exampleTaskWidget "On Merge Transition"
+                                      "Example task ready for merging"
+                                      dJiraConfig
+
         let dAuth =
                 Config.BasicAuthCredentials
                     <$> (T.unpack <$> value usernameInput)
                     <*> (T.unpack <$> value passwordInput)
-            dOnStart      = constDyn "placeholder"
-            dOnPRCreation = constDyn $ Just "placeholder"
-            dOnMerge      = constDyn "placeholder"
-            dGithubConfig =
+            dJiraConfig =
                 Config.JiraConfig
                     <$> (T.unpack <$> value jiraProjectKey)
                     <*> (T.unpack <$> value jiraDomainName)
-                    <*> (dOnStart)
+                    <*> (fromMaybe "" <$> dOnStart)
                     <*> (dOnPRCreation)
-                    <*> (dOnMerge)
+                    <*> (fromMaybe "" <$> dOnMerge)
                     <*> dAuth
-            dRepoManager = Config.Jira <$> dGithubConfig
+            dRepoManager = Config.Jira <$> dJiraConfig
         return $ dRepoManager
+
+exampleTaskWidget
+    :: MonadWidget t m
+    => T.Text
+    -> T.Text
+    -> Dynamic t Config.JiraConfig
+    -> m (Dynamic t (Maybe String))
+exampleTaskWidget label placeholderText dJiraConfig = do
+    let eOnStartRequest = "hi" <$ never
+    do
+        elClass "label" "label" $ do
+            text label
+            elClass "div" "field has-addons" $ do
+                elClass "div" "control is-expanded" $ do
+                    textInput
+                        $  def
+                        &  textInputConfig_initialValue
+                        .~ ""
+                        &  attributes
+                        .~ constDyn
+                               (  ("placeholder" =: placeholderText)
+                               <> ("class" =: "input")
+                               <> ("autocapitalize" =: "off")
+                               )
+                elClass "div" "control" $ do
+                    elClass "button" "button is-info" $ do
+                        text "search"
+            -- return $ tagPromptlyDyn (T.unpack <$> value onStartExampleInput)
+            --                         eClick
+
+    let eSearchOnStart = attachPromptlyDyn dJiraConfig eOnStartRequest
+
+    eMaybeIssue <- performEvent
+        (ffor eSearchOnStart $ \(jiraConfig, exampleTicketName) -> liftIO $ do
+            logger <- Logger.initializeLogger False
+            Reader.runReaderT (Jira.getIssue jiraConfig exampleTicketName)
+                              (Config.LoggerContext logger)
+        )
+
+    dMaybeOnStartValue :: Dynamic t (Maybe String) <- widgetFold
+        (\case
+            Nothing -> do
+                text
+                    "Please input a valid JIRA task reference (example: PSY-32)"
+                return $ constDyn Nothing
+            Just issue -> do
+                let options     = mapToDropdownOptions issue
+                let firstOption = getValueFromIndex options 0
+                dOnStartValue <-
+                    dropdownValue options
+                        <$> selectField "On Start" firstOption options
+                return $ Just <$> dOnStartValue
+        )
+        Nothing
+        eMaybeIssue
+
+    return dMaybeOnStartValue
+
+mapToDropdownOptions issue =
+    createDropdownOptions
+        $   (\transition -> (name transition, T.pack . name $ transition))
+        <$> (transitions issue)
 
 getFieldFromConfigFiles
     :: (A.FromJSON a)

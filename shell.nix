@@ -9,7 +9,7 @@ pkgs.mkShell {
   ];
   buildInputs=[
     (pkgs.writeWatchScript {
-      name = "watch";
+      name = "watch-dev";
       src = "./app";
       command = "cabal new-build all";
     })
