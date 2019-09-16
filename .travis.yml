@@ -27,6 +27,7 @@ script:
 jobs:
     include:
         - stage: deploy
+          language: generic
           os: linux
           before_install:
               - curl https://nixos.org/nix/install | sh
