@@ -102,7 +102,7 @@ bodyElement configFiles = do
                 let dBugCategories = constDyn []
 
                 (submitEl, _) <- elClass' "button" "button is-primary" $ do
-                    text "submit"
+                    text "Generate Config"
 
 
                 let eSubmitClick = domEvent Click submitEl
@@ -243,7 +243,11 @@ exampleTaskWidget (exampleLabel, transitionLabel) dJiraConfig = do
                     .~ ""
                     &  attributes
                     .~ constDyn
-                           (("class" =: "input") <> ("autocapitalize" =: "off"))
+                           (  ("class" =: "input")
+                           <> ("autocapitalize" =: "none")
+                           <> ("autocorrect" =: "off")
+                           <> ("autocomplete" =: "off")
+                           )
             (el, _) <- elClass "div" "control" $ do
                 elClass' "button" "button is-info" $ do
                     text "search"
@@ -317,4 +321,9 @@ textField label initialValue = elClass "div" "field" $ do
                 &  textInputConfig_initialValue
                 .~ initialValue
                 &  attributes
-                .~ constDyn ("class" =: "input" <> "autocapitalize" =: "off")
+                .~ constDyn
+                       (  ("class" =: "input")
+                       <> ("autocapitalize" =: "none")
+                       <> ("autocorrect" =: "off")
+                       <> ("autocomplete" =: "off")
+                       )
