@@ -57,6 +57,10 @@ it will include your credentials for things like Jira and Bitbucket.
 
 `.river.json` contains project-level settings and should be committed.
 
+`river gui` is an alternative for those who would prefer a more straightforward form to input this information. This is likely
+the future of initializing configuration, but please note that it is currently less fully featured than `river init` or direct
+modification of the JSON files.
+
 ## On Passwords
 
 App passwords and api tokens are generated in the settings of your
@@ -74,6 +78,10 @@ about things like command line flags.
 `river init` will ask you for configuration information and query the API's of
 associated tools to gather more complicated details like user ids and Jira transition names
 behind the scenes.
+
+### river gui
+
+`river gui` will bring up a graphical interface. Its functionality currently overlaps with `river init`.
 
 ### river begin
 
