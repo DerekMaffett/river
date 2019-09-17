@@ -1,11 +1,10 @@
-cabal-version: 1.12
-
--- This file has been generated from package.yaml by hpack version 0.32.0.
+-- This file has been generated from package.yaml by hpack version 0.28.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e1e906f52cd9bf5e075a3078cf96f801069454e8afc9983bae11d7af5e9af9b8
+-- hash: 8aa85c5f290d729e5e75674c1612ea3719c33aae2b00a86655bf6bc62d077199
 
+cabal-version:  >= 1.10
 name:           river
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/river#readme>
@@ -17,8 +16,8 @@ copyright:      2018 Derek Maffett
 license:        MIT
 build-type:     Simple
 extra-source-files:
-    ../README.md
     ../ChangeLog.md
+    ../README.md
 
 source-repository head
   type: git
