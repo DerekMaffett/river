@@ -30,7 +30,6 @@ jobs:
           os: linux
           before_install:
               - sudo apt-get install awscli
-              - nix-env -i awscli
           install:
               - aws s3 mv s3://river-dist/$TRAVIS_BUILD_NUMBER/linux/river ./bin/river-linux
               - aws s3 mv s3://river-dist/$TRAVIS_BUILD_NUMBER/osx/river ./bin/river-osx
