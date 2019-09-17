@@ -12,9 +12,9 @@ pkgs.mkShell {
     (pkgs.writeWatchScript {
       name = "watch-dev";
       src = "./app";
-      command = "cabal new-build all";
+      command = "cabal new-build exe:river --ghc-options=-dynamic";
     })
-    (pkgs.localCabalRun "river" "exe:river")
+    (pkgs.writeShellScriptBin "river" "cabal new-run exe:river $@ --ghc-options=-dynamic")
     (pkgs.writeShellScriptBin "hpack-river" "cd ./app && hpack && cd ..")
   ];
 }
