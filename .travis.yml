@@ -20,6 +20,9 @@ jobs:
           before_install:
               - sudo apt-get install awscli
           install:
+              - echo $TRAVIS_BUILD_NUMBER
+              - echo $TRAVIS_OS_NAME
+              - aws s3 ls s3://river-dist --recursive
               - aws s3 mv s3://river-dist/$TRAVIS_BUILD_NUMBER/linux/river ./bin/river-linux
               - aws s3 mv s3://river-dist/$TRAVIS_BUILD_NUMBER/osx/river ./bin/river-osx
               - aws s3 rm --recursive s3://river-dist/$TRAVIS_BUILD_NUMBER/
