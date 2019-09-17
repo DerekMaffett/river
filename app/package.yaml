@@ -7,8 +7,8 @@ maintainer: "derekgmaffett@gmail.com"
 copyright: "2018 Derek Maffett"
 
 extra-source-files:
-    - README.md
-    - ChangeLog.md
+    - ../README.md
+    - ../ChangeLog.md
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
@@ -67,10 +67,9 @@ default-extensions:
 executables:
     river:
         main: Main.hs
-        source-dirs: app
+        source-dirs: src
         ghc-options:
             - -threaded
-            - -dynamic
             - -rtsopts
             - -with-rtsopts=-N
             - -Wall
@@ -82,7 +81,6 @@ executables:
         source-dirs: integration-tests
         ghc-options:
             - -threaded
-            - -dynamic
             - -rtsopts
             - -with-rtsopts=-N
         dependencies:
@@ -96,7 +94,6 @@ tests:
         source-dirs: test
         ghc-options:
             - -threaded
-            - -dynamic
             - -rtsopts
             - -with-rtsopts=-N
         dependencies:

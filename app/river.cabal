@@ -1,10 +1,8 @@
-cabal-version: 1.12
-
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.28.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8f49401900e3d4511ec70b3fe0f3a774d3b49be08e375e1c5d576a7f9e902956
+-- hash: 4394e1b9ada0132cdaa7c8d7fcbcf3a838f2c184fb12c2934546985c5e13ec83
 
 name:           river
 version:        0.1.0.0
@@ -15,11 +13,11 @@ author:         Derek Maffett
 maintainer:     derekgmaffett@gmail.com
 copyright:      2018 Derek Maffett
 license:        MIT
-license-file:   LICENSE
 build-type:     Simple
+cabal-version:  >= 1.10
 extra-source-files:
-    README.md
-    ChangeLog.md
+    ../ChangeLog.md
+    ../README.md
 
 source-repository head
   type: git
@@ -42,6 +40,7 @@ library
       GUI
       Init
       Logger
+      Main
       Merge
       Process
       Review
@@ -83,9 +82,29 @@ library
 executable river
   main-is: Main.hs
   other-modules:
+      Api.Bitbucket
+      Api.Github
+      Api.Jira
+      Api.Jira.Assign
+      Api.Jira.Base
+      Api.Jira.Create
+      Api.Jira.Get
+      Api.Jira.Transitions
+      Begin
+      BugTracker
+      Config
+      Git
+      GUI
+      Init
+      Logger
+      Merge
+      Process
+      Review
+      Types
+      Utils
       Paths_river
   hs-source-dirs:
-      app
+      src
   default-extensions: OverloadedStrings LambdaCase ExistentialQuantification RecordWildCards NamedFieldPuns DuplicateRecordFields DeriveGeneric DeriveAnyClass RecursiveDo ScopedTypeVariables TemplateHaskell FlexibleContexts
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
