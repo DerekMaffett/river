@@ -3,7 +3,7 @@ os:
     - osx
     - linux
 before_install:
-    - curl https://nixos.org/nix/install | sh
+    - curl https://nixos.org/releases/nix/nix-2.2.1/install | sh
     - ". ~/.nix-profile/etc/profile.d/nix.sh"
 install:
     - git submodule update --init
