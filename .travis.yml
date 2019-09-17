@@ -2,19 +2,9 @@ language: generic
 os:
     - osx
     - linux
-
-# before_cache:
-#     - mkdir -p $HOME/nix.store
-#     - nix copy --to file://$HOME/nix.store -f default.nix buildInputs
-# cache:
-#     directories:
-#         - $HOME/nix.store
 before_install:
     - curl https://nixos.org/nix/install | sh
-    - . ~/.nix-profile/etc/profile.d/nix.sh
-    # - sudo mkdir -p /etc/nix
-    # - echo "substituters = https://cache.nixos.org/ file://$HOME/nix.store" | sudo tee -a /etc/nix/nix.conf > /dev/null
-    # - echo 'require-sigs = false' | sudo tee -a /etc/nix/nix.conf > /dev/null
+    - ". ~/.nix-profile/etc/profile.d/nix.sh"
 install:
     - git submodule update --init
     - echo "1" | reflex-platform/try-reflex || echo "just needed the binary caches..."
@@ -22,7 +12,6 @@ script:
     - nix-env -i awscli
     - nix-build
     - result/bin/river-test
-    # - result/bin/river-integration-tests
     - aws s3 cp result/bin/river s3://river-dist/$TRAVIS_BUILD_NUMBER/$TRAVIS_OS_NAME/river
 jobs:
     include:
@@ -56,5 +45,5 @@ jobs:
                     repo: DerekMaffett/river
 env:
     global:
-        - secure: VxQnJykbq6VkuQasC7jhGLct09cF45xVFg1Y4N8Th6xI/uM3IagC08x1Pc5/LCyWgvs6DReWMZHzmMKDPsWScENmEm3fl1TB6k3+dsSFmJTu+2HIJ4N3poNqeoLoylOhVk8NFQEZ+vCRP8yhOcLS3q7ib/aDJrB4NCHLxbjZ585qadfoJ/hQfkBPsj4EgvFEQPCCWlP7bbaXIvzQMnuQm3O5rM4fu5+lAkpBTxYAjMopbPDEMgG8kYthGt79pI1hULLkYz2sWPGm7Jv3qqiCSqJxpcmZd7Psro7CX5bR8mgYIuP/tiM1tEOdznbnc6RYgB3z3kCFukne7PvGIjesvL8VXw6gUjA3f5p8HcFUWemu0drzO42emgVYqNp03q5jJNDaXUUsK3l9Rhz+uWm/nJWsAXEX9oZdyL1eTJtyuPEPWTIHlxjUwsLuBHBto58KwNG08/4ailIDfmuCoFbb0z8TNO4Q6MIyz5D7hgmi4+It4kQ2+Rq0xU9XOh6bttgGuVVlBNDxIiVWGzovjOwTJ42mjPVZUJ1nir1mjHFL5WY4h7fefK1/ht7QpB1HdkEcvUrijhLIOaGkLZrmScTggbkWHs6hkpG/UzZZjou46+SVC4L+P6UpYSrhe8Ta2tTuGUd2xTbMUWnm1yDNcStCJqn8Pi1RW1Fby4nsiM8k9yY=
-        - secure: V5iQzU8D51LJCD9hM6Q0G9uDAARRKmYMISO/TwDYtyd2kkoMKjpyLSvOUppB7Xjd+Kx0apxL6Nln/TkV6ox3zchIMqAEkwYkQZTm/8yW9FbGyk4HaEbS47VUl+PbnbeCqHdE1brlMTzgzIIomNT519RC5NZLasN0o0QDPTp9GU56Uas3tvWE+DydLxZJSqamTj8S8eQjJFvv2chQIrHtByeq7Q19eJDAPcl85Xf4FUoy3OSHvC9DpAgecD8q9zu1lpXCCQeQOITWaoSBzLnVcCHzxwCjCvxLjz7glJxjDZlbIBgUGsft9N/0n9uYg5CVCjrNymdrD1RH3y3x2FSYR3lXIgCtJTJ3oTDl5RdiIs1eF8AksTAxg/HFLrSjPwyn6oDH8ILClYdtkMSn1iu1APatmKqvpj3x9ZqvQceTRoVxJPenHKM4K5Dw/eaKcj3z+9XHpUN9BtSTcRz5b0LLZ7bz1CjaD016twLz+Dg9MxZGhZm+c+G4GM48+oLKPA0Irr8fDI1X60N0YjQdw/l6SWse8bYXKR/5Ikdi3+qGxZDmCuuSyxtOYXfC1OE2Zadl8nSHAmn/GZYOH6IN19aawcFiNjCK3g1qb9hLvmF8MpNnDfTN9VDqyPefJu4WaQ+lC00NJYkvGNavxZuM8hQNeIsRYpqFdiS+dTZGzBxdNQ0=
+        - secure: bKU+4ZK6soScIk38o5eQGMAu1Musg0/IWm4IffZ42Dp98ttQs/X429whYaYGqq38VuFqOfms9mRrwjGqQUQIJAzJHa5zeb6vYHSJhLOTPx+Qi46Hq9mQDVci91MGHabt2K1Xz3MeAt7f8u/sH0r27bHyPCjrhLgCvmOp4Pjnqva9zATOYxLfvo7nK1Wqcv4kobPU3RiIi6iQ6ebKX5IqvjhlyOWvuLOTYVabTdtCFgXEyvm1omcLuyz9ssie1p8vidZbwfpDP7eybrol2WMkN9I8aG6ON1/gpm4QlgzV8MsI0R4f0Kc39mVJjHFGne6MOuhG8iik15eP246e+KqdnOzacNMiFLsNHu4gRgR7kZSMqV5CkCmTMCKZ8Y37u3MIYZDGkaYfKh1yq7NhQd0sMP6nFDiYlBst+bVvF1FoPxQ2El8kM2QDnRnc8CsNUUEsp3co1VDVA+apPQPmCrY1gX9KQSDAnCsZDMrEuETqoO3GGk7WYjr2sZb4bFtIHJZnjZPB/GtoCFWOSfyqMcwfJ0eYo+l3VDpf36D3cFqnoEV2a/LP+xSedoQCll23GsB1ZkybXG1tqRlFZSRhArPQfgUFS17NLf+OA2Pe9FsRJ3LBuufz9j3BxdmKzYTMUulDBMO3rLoAW2DQ5Rx6yIDdvzT8MWDYBvTWqSpTFpDZPws=
+        - secure: g4ZxOuPSPAyshTaQcr7PpS13nflvr5LJtYUr7xgk3UNBdWBMWbolfnmX9DrD+MOoYCEMQ9/kqBg/wF2VaqrE/fpHDDg8WPyH0tA0Qr0lyjmOIR+lQYaaGYXEgQQQwrOOLoX1paD7zGs3th+ujawpkgPNxrKIlwSJfG3EX2Z/X6Uyl+5zrymQi1b0B7jUQXC/B1ie/KN3f3+E4R0HHZwxN32P5OTXOhfdt8yt+sDclQUNepYjD4aoe5dU4QcSq64spBO5z/xhJWFWiO5nfyMYbI72cwPwsFXfYjApFdvDOrJHa4jtqAi8TxpDfFif1hsrcU22qdNkrVsRJQWG+FuzgMuLd5XoE1BjY0yu00nwqokem1aEns1XWmv/TT7i3VxDIw4a4J+K4jKLV5VAzfv0AYf8oB8C7lWlNnqQoUvZGRdSeQ8VVvyGjSjWr7T2fneJoEVM7iyRyD7aNlP+CpXMZ20NhQouVawNa8YRx6eaIDr2KLIbv0HrIGgda+ELrAYgH2E3QGPqyMaqEyuF609DME/7G/09IL7j1iWx0i3ypzQzqD747qr+hyfgYaJv60jo11Z7YuVaDJn3xKldny9Wy3ASw/Sf0KSG7oeCk/Ld2TlDih5qL4v50+QBoMciB2O8I+wSYlqyLoJ+zc6OJew/Vip+LY2ClMWUu+4PejeOAaA=
