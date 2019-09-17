@@ -1,8 +1,10 @@
--- This file has been generated from package.yaml by hpack version 0.28.2.
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.32.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4394e1b9ada0132cdaa7c8d7fcbcf3a838f2c184fb12c2934546985c5e13ec83
+-- hash: e1e906f52cd9bf5e075a3078cf96f801069454e8afc9983bae11d7af5e9af9b8
 
 name:           river
 version:        0.1.0.0
@@ -14,10 +16,9 @@ maintainer:     derekgmaffett@gmail.com
 copyright:      2018 Derek Maffett
 license:        MIT
 build-type:     Simple
-cabal-version:  >= 1.10
 extra-source-files:
-    ../ChangeLog.md
     ../README.md
+    ../ChangeLog.md
 
 source-repository head
   type: git
@@ -175,8 +176,7 @@ executable river-integration-tests
     , vector
   default-language: Haskell2010
 
-test-suite river-test
-  type: exitcode-stdio-1.0
+executable river-test
   main-is: Spec.hs
   other-modules:
       GitSpecs
