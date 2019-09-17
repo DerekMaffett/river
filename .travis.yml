@@ -11,7 +11,7 @@ install:
 script:
     - nix-env -i awscli
     - nix-build
-    - nix-shell --run "cabal new-test river"
+    - result/bin/river-test
     - aws s3 cp result/bin/river s3://river-dist/$TRAVIS_BUILD_NUMBER/$TRAVIS_OS_NAME/river
 jobs:
     include:

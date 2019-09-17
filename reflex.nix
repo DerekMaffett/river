@@ -1,4 +1,5 @@
-(import ./reflex-platform {}).project ({ pkgs, ... }: {
+{ system ? builtins.currentSystem }:
+(import ./reflex-platform { inherit system; }).project ({ pkgs, ... }: {
   packages = {
     app = ./app;
   };

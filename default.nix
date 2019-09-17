@@ -1,4 +1,4 @@
 let 
-  project = import ./reflex.nix;
+  project = import ./reflex.nix {};
 in
   project.ghc.app
