@@ -19,7 +19,7 @@ import qualified Data.Map                      as Map
 import qualified Data.Aeson                    as A
 import qualified Api.Jira.Get                  as Jira
 
-startGui = do
+main = do
     files <- Config.getConfigFiles
     mainWidgetWithCss css $ bodyElement files
     return ()

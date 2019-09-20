@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8aa85c5f290d729e5e75674c1612ea3719c33aae2b00a86655bf6bc62d077199
+-- hash: e30573758951ccffc68f9abb790a8b7f91be101a74219f1a6095f4c52d1515ff
 
 cabal-version:  >= 1.10
 name:           river
@@ -14,10 +14,11 @@ author:         Derek Maffett
 maintainer:     derekgmaffett@gmail.com
 copyright:      2018 Derek Maffett
 license:        MIT
+license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
-    ../ChangeLog.md
-    ../README.md
+    ChangeLog.md
+    README.md
 
 source-repository head
   type: git
@@ -37,10 +38,8 @@ library
       BugTracker
       Config
       Git
-      GUI
       Init
       Logger
-      Main
       Merge
       Process
       Review
@@ -49,7 +48,7 @@ library
   other-modules:
       Paths_river
   hs-source-dirs:
-      src
+      core
   default-extensions: OverloadedStrings LambdaCase ExistentialQuantification RecordWildCards NamedFieldPuns DuplicateRecordFields DeriveGeneric DeriveAnyClass RecursiveDo ScopedTypeVariables TemplateHaskell FlexibleContexts
   build-depends:
       aeson
@@ -59,7 +58,6 @@ library
     , containers
     , data-default-class
     , directory
-    , file-embed
     , graphql
     , haskeline
     , hslogger
@@ -67,8 +65,6 @@ library
     , optparse-applicative
     , parsec
     , process
-    , reflex
-    , reflex-dom
     , req
     , safe
     , safe-exceptions
@@ -82,31 +78,13 @@ library
 executable river
   main-is: Main.hs
   other-modules:
-      Api.Bitbucket
-      Api.Github
-      Api.Jira
-      Api.Jira.Assign
-      Api.Jira.Base
-      Api.Jira.Create
-      Api.Jira.Get
-      Api.Jira.Transitions
-      Begin
-      BugTracker
-      Config
-      Git
-      GUI
-      Init
-      Logger
-      Merge
-      Process
-      Review
-      Types
-      Utils
       Paths_river
   hs-source-dirs:
-      src
+      cli
   default-extensions: OverloadedStrings LambdaCase ExistentialQuantification RecordWildCards NamedFieldPuns DuplicateRecordFields DeriveGeneric DeriveAnyClass RecursiveDo ScopedTypeVariables TemplateHaskell FlexibleContexts
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
+  ghc-options: -threaded -rtsopts -optl-static -optl-pthread -with-rtsopts=-N -Wall
+  cc-options: -static
+  ld-options: -static -pthread
   build-depends:
       aeson
     , aeson-pretty
@@ -115,7 +93,6 @@ executable river
     , containers
     , data-default-class
     , directory
-    , file-embed
     , graphql
     , haskeline
     , hslogger
@@ -123,8 +100,6 @@ executable river
     , optparse-applicative
     , parsec
     , process
-    , reflex
-    , reflex-dom
     , req
     , river
     , safe
@@ -153,7 +128,6 @@ executable river-integration-tests
     , containers
     , data-default-class
     , directory
-    , file-embed
     , graphql
     , haskeline
     , hslogger
@@ -162,8 +136,6 @@ executable river-integration-tests
     , optparse-applicative
     , parsec
     , process
-    , reflex
-    , reflex-dom
     , req
     , river
     , safe
@@ -194,7 +166,6 @@ executable river-test
     , containers
     , data-default-class
     , directory
-    , file-embed
     , graphql
     , haskeline
     , hslogger
@@ -203,8 +174,6 @@ executable river-test
     , optparse-applicative
     , parsec
     , process
-    , reflex
-    , reflex-dom
     , req
     , river
     , safe

@@ -7,8 +7,8 @@ maintainer: "derekgmaffett@gmail.com"
 copyright: "2018 Derek Maffett"
 
 extra-source-files:
-    - ../README.md
-    - ../ChangeLog.md
+    - README.md
+    - ChangeLog.md
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
@@ -42,13 +42,10 @@ dependencies:
     - haskeline
     - graphql
     - safe-exceptions
-    - reflex
-    - reflex-dom
-    - file-embed
 
 library:
     source-dirs:
-        - src
+        - core
 
 default-extensions:
     - OverloadedStrings
@@ -67,14 +64,36 @@ default-extensions:
 executables:
     river:
         main: Main.hs
-        source-dirs: src
+        source-dirs: cli
+        cc-options: -static
+        ld-options: -static -pthread
         ghc-options:
             - -threaded
             - -rtsopts
+            - -optl-static
+            - -optl-pthread
             - -with-rtsopts=-N
             - -Wall
         dependencies:
             - river
+
+    # river-gui:
+    #     main: GUI.hs
+    #     source-dirs: src
+    #     # cc-options: -static
+    #     # ld-options: -static -pthread
+    #     ghc-options:
+    #         - -threaded
+    #         - -rtsopts
+    #         # - -optl-static
+    #         # - -optl-pthread
+    #         - -with-rtsopts=-N
+    #         - -Wall
+    #     dependencies:
+    #         - river
+    #         - reflex
+    #         - reflex-dom
+    #         - file-embed
 
     river-test:
         main: Spec.hs

@@ -1,6 +1,5 @@
 module Main where
 
-import qualified GUI
 import qualified Begin
 import qualified Review
 import qualified Merge
@@ -32,8 +31,7 @@ data InitOptions = InitOptions
   } deriving (Show)
 
 data Options
-  = Gui
-  | Begin BeginOptions
+  = Begin BeginOptions
   | Review ReviewOptions
   | Merge MergeOptions
   | Init InitOptions deriving (Show)
@@ -62,13 +60,6 @@ quickFixOpt = liftA2 Begin.QuickFix summaryOpt issueTypeOpt
             <$> (switch $ long "bug" <> short 'b' <> help
                     "marks quick-fix as a bug, defaults to task"
                 )
-
-guiOpts :: ParserInfo Options
-guiOpts = info optsParser desc
-  where
-    optsParser = pure Gui
-    desc       = fullDesc <> progDesc "Activates the experimental GUI" <> header
-        "Activates the experimental GUI"
 
 initOpts :: ParserInfo Options
 initOpts = info optsParser desc
@@ -111,8 +102,7 @@ opts = info optsParser desc
   where
     optsParser =
         subparser
-                (  (command "gui" guiOpts)
-                <> (command "init" initOpts)
+                (  (command "init" initOpts)
                 <> (command "begin" beginOpts)
                 <> (command "pr" reviewOpts)
                 <> (command "merge" mergeOpts)
@@ -129,7 +119,6 @@ main = do
 runProgram :: Options -> IO ()
 runProgram options = do
     case options of
-        Gui -> GUI.startGui
         Begin (BeginOptions { useDebugLogger, issueSource }) ->
             runWithConfigContext useDebugLogger $ Begin.begin issueSource
         Review (ReviewOptions { useDebugLogger }) ->

@@ -15,6 +15,5 @@ pkgs.mkShell {
       command = "cabal new-build exe:river --ghc-options=-dynamic";
     })
     (pkgs.writeShellScriptBin "river" "cabal new-run exe:river $@ --ghc-options=-dynamic")
-    (pkgs.writeShellScriptBin "hpack-river" "cd ./app && hpack && cd ..")
   ];
 }

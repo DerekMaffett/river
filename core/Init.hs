@@ -4,7 +4,6 @@ module Init
 where
 
 import qualified Logger
-import qualified GUI
 import qualified Api.Jira                      as Jira
 import qualified Api.Bitbucket                 as Bitbucket
 import qualified Types
