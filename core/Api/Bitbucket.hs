@@ -7,7 +7,6 @@ where
 
 import qualified Types                         as Types
 import           Config
-import           Data.Default.Class
 import           Data.Aeson
 import qualified Data.Text                     as T
 import qualified Data.Vector                   as V
@@ -43,7 +42,7 @@ createPullRequest :: BitbucketConfig -> Types.Issue -> String -> Program String
 createPullRequest (BitbucketConfig { defaultReviewers, repoName, repoOrg, auth }) issue branchName
     = do
         Config { workingBranch } <- ask
-        runReq def $ do
+        runReq defaultHttpConfig $ do
             user <-
                 responseBody
                     <$> req GET
@@ -99,7 +98,7 @@ mergePullRequest :: BitbucketConfig -> String -> Program ()
 mergePullRequest (BitbucketConfig { defaultReviewers, repoName, repoOrg, auth }) branchName
     = do
         Config { workingBranch } <- ask
-        runReq def $ do
+        runReq defaultHttpConfig $ do
             prId <- responseBody <$> req
                 GET
                 pullRequestsUrl
@@ -133,7 +132,7 @@ mergePullRequest (BitbucketConfig { defaultReviewers, repoName, repoOrg, auth })
 bitbucketQueryArg arg = "\"" <> T.pack arg <> "\""
 
 getSelf auth = do
-    res <- runReq def $ do
+    res <- runReq defaultHttpConfig $ do
         responseBody
             <$> req GET (baseUrl /: "user") NoReqBody jsonResponse authOptions
     return res

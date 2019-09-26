@@ -1,4 +1,4 @@
-module GUI where
+module Main where
 
 import           Control.Monad                  ( join )
 import qualified Control.Monad.Reader          as Reader
@@ -25,7 +25,7 @@ main = do
     return ()
 
 
-css = $(embedFile "src/init.css")
+css = $(embedFile "gui/init.css")
 
 createDropdownOptions = zipWith
     (\index (val, displayVal) -> (index, val, displayVal))

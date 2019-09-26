@@ -23,7 +23,7 @@ mkDerivation {
     parsec process QuickCheck req safe safe-exceptions split text
     typed-process unordered-containers vector
   ];
-  preConfigure = "hpack";
+  prePatch = "hpack";
   homepage = "https://github.com/DerekMaffett/river#readme";
   license = stdenv.lib.licenses.mit;
 }

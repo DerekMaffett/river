@@ -4,21 +4,16 @@ module Api.Jira.Transitions
 where
 
 import           Api.Jira.Base
-import           Data.Aeson
-import           Data.Default.Class
-import           Data.List
-import           Data.Tuple
-import           Data.Maybe
-import           Data.Text                      ( Text
-                                                , pack
-                                                )
-import           GHC.Generics
-import           Network.HTTP.Req
 import           Config
+import           Data.Aeson
+import           Data.List
+import           Data.Maybe
+import           Data.Text        (Text, pack)
+import           Data.Tuple
+import           GHC.Generics
 import           Logger
-import qualified Types                          ( Transition(..)
-                                                , Issue(..)
-                                                )
+import           Network.HTTP.Req
+import qualified Types            (Issue (..), Transition (..))
 
 newtype Body = Body
   { transition :: Types.Transition
@@ -34,7 +29,7 @@ transitionIssue transitionLabel settings issue = do
                 <> transitionLabel
                 <> "\n\nAvailable transitions: \n"
                 <> (unlines . fmap Types.name . Types.transitions) issue
-        Just transition -> runReq def $ do
+        Just transition -> runReq defaultHttpConfig $ do
             req POST
                 url
                 (ReqBodyJson (Body transition))

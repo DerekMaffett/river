@@ -28,7 +28,6 @@ dependencies:
     - aeson-pretty
     - vector
     - text
-    - data-default-class
     - bytestring
     - process
     - typed-process
@@ -65,21 +64,21 @@ executables:
     river:
         main: Main.hs
         source-dirs: cli
-        cc-options: -static
-        ld-options: -static -pthread
+        # cc-options: -static
+        # ld-options: -static -pthread
         ghc-options:
             - -threaded
             - -rtsopts
-            - -optl-static
-            - -optl-pthread
+            # - -optl-static
+            # - -optl-pthread
             - -with-rtsopts=-N
             - -Wall
         dependencies:
             - river
 
     # river-gui:
-    #     main: GUI.hs
-    #     source-dirs: src
+    #     main: Main.hs
+    #     source-dirs: gui
     #     # cc-options: -static
     #     # ld-options: -static -pthread
     #     ghc-options:
@@ -94,6 +93,7 @@ executables:
     #         - reflex
     #         - reflex-dom
     #         - file-embed
+    #         - data-default-class
 
     river-test:
         main: Spec.hs

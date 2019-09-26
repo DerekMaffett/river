@@ -1,4 +1,5 @@
 let 
-  project = import ./reflex.nix {};
+  pkgs = import <nixpkgs> {};
 in
-  project.ghc.app
+  pkgs.haskellPackages.callPackage ./cli.nix {}
+

@@ -4,18 +4,17 @@ module Api.Jira.Get
 where
 
 import           Api.Jira.Base
+import qualified Config
+import           Control.Exception.Safe
+import qualified Control.Monad.Reader   as Reader
 import           Data.Aeson
+import qualified Data.ByteString.Char8  as B
 import           Data.Maybe
-import qualified Data.ByteString.Char8         as B
-import           Data.Default.Class
 import           Data.Text
 import           GHC.Generics
-import           Network.HTTP.Req
 import qualified Logger
-import qualified Config
-import           Types                          ( Issue(..) )
-import qualified Control.Monad.Reader          as Reader
-import           Control.Exception.Safe
+import           Network.HTTP.Req
+import           Types                  (Issue (..))
 
 getIssue
     :: (Config.ContainsLogger a)
@@ -24,7 +23,7 @@ getIssue
     -> Reader.ReaderT a IO (Maybe Issue)
 getIssue settings issueKey = do
     issueOrErr <- tryAny $ do
-        runReq def $ do
+        runReq defaultHttpConfig $ do
             response <- req GET
                             url
                             NoReqBody

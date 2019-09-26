@@ -4,12 +4,11 @@ module Api.Jira.Create
 where
 
 import           Api.Jira.Base
+import           Config
 import           Data.Aeson
-import           Data.Default.Class
 import           GHC.Generics
 import           Network.HTTP.Req
-import           Config
-import qualified Types                          ( IssueType(..) )
+import qualified Types            (IssueType (..))
 
 
 data Response = Response
@@ -18,7 +17,7 @@ data Response = Response
 
 createIssue :: JiraConfig -> String -> Types.IssueType -> Program String
 createIssue settings summary issueType = do
-    runReq def $ do
+    runReq defaultHttpConfig $ do
         response <- req POST
                         url
                         (ReqBodyJson $ request)

@@ -1,10 +1,11 @@
--- This file has been generated from package.yaml by hpack version 0.28.2.
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.32.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e30573758951ccffc68f9abb790a8b7f91be101a74219f1a6095f4c52d1515ff
+-- hash: 97cbbd0ad9e244c1786de62a4a6fcac229d6c338f3b20d9c74aa3e3e594450e2
 
-cabal-version:  >= 1.10
 name:           river
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/river#readme>
@@ -17,8 +18,8 @@ license:        MIT
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
-    ChangeLog.md
     README.md
+    ChangeLog.md
 
 source-repository head
   type: git
@@ -82,9 +83,7 @@ executable river
   hs-source-dirs:
       cli
   default-extensions: OverloadedStrings LambdaCase ExistentialQuantification RecordWildCards NamedFieldPuns DuplicateRecordFields DeriveGeneric DeriveAnyClass RecursiveDo ScopedTypeVariables TemplateHaskell FlexibleContexts
-  ghc-options: -threaded -rtsopts -optl-static -optl-pthread -with-rtsopts=-N -Wall
-  cc-options: -static
-  ld-options: -static -pthread
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       aeson
     , aeson-pretty

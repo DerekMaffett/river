@@ -1,11 +1,11 @@
 let
   pkgs = import <nixpkgs> {};
-  app = import ./reflex.nix {};
+  app = import ./default.nix;
 in
 pkgs.mkShell {
   name="river";
   inputsFrom=[
-    app.shells.ghc
+    app.env
   ];
   buildInputs=[
     pkgs.haskellPackages.hpack
@@ -15,5 +15,6 @@ pkgs.mkShell {
       command = "cabal new-build exe:river --ghc-options=-dynamic";
     })
     (pkgs.writeShellScriptBin "river" "cabal new-run exe:river $@ --ghc-options=-dynamic")
+    (pkgs.writeShellScriptBin "river-gui" "cabal new-run river-gui $@ --ghc-options=-dynamic")
   ];
 }
